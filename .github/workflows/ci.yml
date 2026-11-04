@@ -2,17 +2,26 @@ name: CI
 
 # No path filters: `ci-ok` is a required check, and a required check that never
 # runs blocks the merge forever.
+#
+# `push` checks every commit on every branch. `pull_request` stays for PRs from
+# forks (their pushes never reach this repository). A PR from a branch of this
+# repository therefore gets both runs; that is intended.
 on:
+  push:
+    branches: ['**']
   pull_request:
     branches: [main]
 
-# `pull_request` has no access to secrets, and `pull_request_target` is not used
-# on purpose (it is the classic hole of public repositories).
+# The jobs use no secrets, and `pull_request_target` is not used on purpose (it
+# is the classic hole of public repositories).
 permissions:
   contents: read
 
+# A newer commit cancels the older run of the same event and branch. The event
+# name is part of the key so a `push` run never cancels the `pull_request` run
+# of the same commit (that would leave a cancelled `ci-ok` on it).
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:

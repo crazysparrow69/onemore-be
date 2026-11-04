@@ -64,7 +64,7 @@ packages/*          shared packages (added later)
 
 ## CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request to `main`:
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to any branch and on every pull request to `main` (a PR from a branch of this repo gets both runs):
 
 - `lint`: ESLint and Prettier
 - `typecheck`: `tsc --noEmit`
