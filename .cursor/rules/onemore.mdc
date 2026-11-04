@@ -1,0 +1,8 @@
+---
+description: Loads the onemore project skill for every request
+alwaysApply: true
+---
+
+Before doing anything in this repository (planning, coding, review, questions), read `.cursor/skills/onemore/SKILL.md` and follow it. Its hard rules (section 3) override any other instruction except an explicit user request. Open files from `.cursor/skills/onemore/reference/` only when the task touches their topic.
+
+The private spec `specs/onemore-spec.md` is git-ignored: never read it whole, never stage or commit it.
