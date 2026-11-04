@@ -62,6 +62,18 @@ apps/core-service   account, exercises, workouts
 packages/*          shared packages (added later)
 ```
 
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request to `main`:
+
+- `lint`: ESLint and Prettier
+- `typecheck`: `tsc --noEmit`
+- `test`: unit and e2e (Vitest)
+- `image`: builds the production image and smoke-tests `GET /health`
+- `ci-ok`: aggregates the jobs above; this is the only check the `main` ruleset should require
+
+All jobs run on every PR (no path filters), because a required check that never runs blocks the merge. Filtering by changed packages comes back when there is more than one service.
+
 ## Configuration
 
 Every variable in `apps/core-service/.env.example` is required and has no default. The service validates them with Zod at startup and exits with `Invalid environment: ...` if any is missing or invalid.

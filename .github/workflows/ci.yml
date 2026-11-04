@@ -1,0 +1,112 @@
+name: CI
+
+# No path filters: `ci-ok` is a required check, and a required check that never
+# runs blocks the merge forever.
+on:
+  pull_request:
+    branches: [main]
+
+# `pull_request` has no access to secrets, and `pull_request_target` is not used
+# on purpose (it is the classic hole of public repositories).
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: ESLint
+        run: pnpm lint
+      - name: Prettier
+        run: pnpm format:check
+
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: tsc
+        run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Unit tests
+        run: pnpm test
+      - name: E2E tests
+        run: pnpm test:e2e
+
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      IMAGE: onemore/core-service:ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build runtime image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/core-service/Dockerfile
+          target: runtime
+          tags: ${{ env.IMAGE }}
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image
+        env:
+          APP_VERSION: ci-${{ github.sha }}
+        run: |
+          docker run -d --name core-smoke -p 8080:8080 \
+            -e NODE_ENV=production \
+            -e PORT=8080 \
+            -e LOG_LEVEL=info \
+            -e APP_VERSION="$APP_VERSION" \
+            "$IMAGE"
+          for _ in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8080/health -o health.json; then
+              break
+            fi
+            sleep 1
+          done
+          cat health.json
+          grep -q "\"version\":\"$APP_VERSION\"" health.json
+
+      - name: Container logs
+        if: failure()
+        run: docker logs core-smoke || true
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f core-smoke || true
+
+  # The only check required by the `main` ruleset. It also succeeds when jobs are
+  # skipped, which a plain required check would not.
+  ci-ok:
+    if: always()
+    needs: [lint, typecheck, test, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every job to pass
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'all(.[]; .result == "success" or .result == "skipped")' > /dev/null
