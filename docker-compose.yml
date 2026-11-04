@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: onemore
+      POSTGRES_PASSWORD: onemore
+      POSTGRES_DB: onemore
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onemore -d onemore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  core-service:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: apps/core-service/Dockerfile
+      target: development
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: development
+      PORT: "8080"
+      LOG_LEVEL: debug
+      APP_VERSION: dev
+    volumes:
+      - ./apps/core-service/src:/repo/apps/core-service/src
+      - ./apps/core-service/tsconfig.json:/repo/apps/core-service/tsconfig.json
+      - ./apps/core-service/tsconfig.build.json:/repo/apps/core-service/tsconfig.build.json
+      - ./apps/core-service/nest-cli.json:/repo/apps/core-service/nest-cli.json
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+volumes:
+  db-data:

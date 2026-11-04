@@ -79,7 +79,7 @@ Rule details and rationale: [reference/data-and-db.md](reference/data-and-db.md)
 ## 4. Conventions
 
 - Layers: `controller -> service -> repository`. One repository per entity (no generic `AbstractRepository`). Controllers contain no business logic and no DB calls.
-- Env of every service is validated by a Zod schema at startup; keys must match `.env.example`.
+- Env of every service is validated at startup by a Zod schema via `ConfigModule.forRoot({ isGlobal: true, validate })` (`@nestjs/config`). Every variable is required: NO `.default()` in env schemas, startup must fail on a missing or invalid value. Keys must match `.env.example`. Read config through `ConfigService`, never `process.env`.
 - Drizzle `schemaFilter` excludes `neon_auth`; own migrations table per schema (`migrationsSchema`).
 - Pure business logic (Mifflin-St Jeor, 1RM, unit conversion) lives in `packages/domain`, no framework imports, unit-tested.
 - Error responses: one shared error shape from `packages/nest-common`.

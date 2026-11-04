@@ -1,38 +1,34 @@
 import { z } from 'zod';
 
-const port = z
-  .string()
-  .default('8080')
-  .transform((value, ctx) => {
-    if (!/^[1-9]\d{0,4}$/.test(value) || Number(value) > 65535) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'must be an integer between 1 and 65535',
-      });
-      return z.NEVER;
-    }
-    return Number(value);
-  });
+const required = { error: 'is required' } as const;
+
+const port = z.string(required).transform((value, ctx) => {
+  if (!/^[1-9]\d{0,4}$/.test(value) || Number(value) > 65535) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'must be an integer between 1 and 65535',
+    });
+    return z.NEVER;
+  }
+  return Number(value);
+});
 
 export const envSchema = z.object({
-  NODE_ENV: z
-    .enum(['development', 'test', 'production'])
-    .default('development'),
+  NODE_ENV: z.enum(['development', 'test', 'production'], required),
   PORT: port,
-  LOG_LEVEL: z
-    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
-    .default('info'),
-  APP_VERSION: z.string().min(1).default('dev'),
+  LOG_LEVEL: z.enum(
+    ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
+    required,
+  ),
+  APP_VERSION: z.string(required).min(1, 'must not be empty'),
 });
 
 export const ENV_KEYS = Object.keys(envSchema.shape);
 
 export type Env = z.infer<typeof envSchema>;
 
-export const ENV = Symbol('ENV');
-
-export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const parsed = envSchema.safeParse(source);
+export function validateEnv(config: Record<string, unknown>): Env {
+  const parsed = envSchema.safeParse(config);
   if (!parsed.success) {
     const details = parsed.error.issues
       .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)

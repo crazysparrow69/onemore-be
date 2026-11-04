@@ -2,6 +2,8 @@ import type { DestinationStream } from 'pino';
 import type { Options } from 'pino-http';
 import type { Env } from '../config/env';
 
+type LoggerEnv = Pick<Env, 'NODE_ENV' | 'LOG_LEVEL' | 'APP_VERSION'>;
+
 const severityByLevel: Record<string, string> = {
   trace: 'DEBUG',
   debug: 'DEBUG',
@@ -12,7 +14,7 @@ const severityByLevel: Record<string, string> = {
 };
 
 export async function createPinoHttpOptions(
-  env: Env,
+  env: LoggerEnv,
 ): Promise<Options | [Options, DestinationStream]> {
   const options: Options = {
     level: env.LOG_LEVEL,

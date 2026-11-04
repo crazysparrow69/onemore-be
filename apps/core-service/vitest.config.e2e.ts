@@ -6,6 +6,12 @@ export default defineConfig({
     environment: 'node',
     include: ['test/**/*.e2e-spec.ts'],
     root: '.',
+    env: {
+      NODE_ENV: 'test',
+      PORT: '8080',
+      LOG_LEVEL: 'error',
+      APP_VERSION: 'e2e-version',
+    },
   },
   plugins: [
     swc.vite({

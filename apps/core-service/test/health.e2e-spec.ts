@@ -8,9 +8,6 @@ describe('GET /health', () => {
   let app: NestExpressApplication;
 
   beforeAll(async () => {
-    process.env.NODE_ENV = 'test';
-    process.env.APP_VERSION = 'e2e-version';
-
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

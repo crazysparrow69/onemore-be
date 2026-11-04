@@ -1,12 +1,16 @@
-import { Controller, Get, Inject } from '@nestjs/common';
-import { ENV, type Env } from '../config/env';
+import { Controller, Get } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { Env } from '../config/env';
 
 @Controller('health')
 export class HealthController {
-  constructor(@Inject(ENV) private readonly env: Env) {}
+  constructor(private readonly config: ConfigService<Env, true>) {}
 
   @Get()
   getHealth(): { status: 'ok'; version: string } {
-    return { status: 'ok', version: this.env.APP_VERSION };
+    return {
+      status: 'ok',
+      version: this.config.get('APP_VERSION', { infer: true }),
+    };
   }
 }
