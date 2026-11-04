@@ -6,6 +6,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "prepare": "husky || true",
     "build": "pnpm -r build",
     "dev": "pnpm --filter core-service dev",
     "lint": "pnpm -r lint",
@@ -13,5 +14,11 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "test:e2e": "pnpm -r test:e2e"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0"
   }
 }

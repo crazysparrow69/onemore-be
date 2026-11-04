@@ -1,0 +1,3 @@
+# A single lint-staged config runs from the repo root; --cwd keeps
+# eslint and prettier inside the package that owns their config.
+pnpm exec lint-staged --cwd apps/core-service && pnpm typecheck

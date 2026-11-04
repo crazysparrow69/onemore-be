@@ -32,6 +32,16 @@ NODE_ENV=production node apps/core-service/dist/main.js
 
 `GET /health` returns `{ "status": "ok", "version": "<APP_VERSION>" }` and does not touch a database.
 
+## Git hooks
+
+`pnpm install` turns the hooks on (husky). They run locally; CI still runs the same checks plus the image build.
+
+- **pre-commit**: ESLint `--fix` and Prettier on staged `*.ts` in `apps/core-service`, then `pnpm typecheck`
+- **commit-msg**: [Conventional Commits](https://www.conventionalcommits.org/), for example `feat(core-service): add health check`
+- **pre-push**: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`
+
+`git commit --no-verify` and `git push --no-verify` skip the hooks. Use that only on purpose.
+
 ## Docker
 
 Everyday work is the database in Compose and the service on the host:
@@ -81,5 +91,3 @@ Every variable in `apps/core-service/.env.example` is required and has no defaul
 - Local `pnpm dev`: `cp apps/core-service/.env.example apps/core-service/.env`. `@nestjs/config` loads that file; real environment variables take precedence over it.
 - Docker Compose sets its own values and does not read `.env`.
 - Deploys (Cloud Run) must provide every variable, including `APP_VERSION`.
-
-Real secrets stay out of git.

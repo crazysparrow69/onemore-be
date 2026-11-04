@@ -129,6 +129,6 @@ Phase: <n> · Spec refs: <headings>
 3. Work in small steps. After each step run the narrowest check (typecheck / the relevant test). Fix before moving on.
 4. Write the tests listed in the plan together with the code, not after. Guards, repositories (owner filter), migrations and domain formulas always get tests.
 5. Never add dependencies, files, endpoints, or abstractions that the plan does not mention. No drive-by refactors.
-6. Before saying "done": run the plan's Verify commands and report their real result. Root commands: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm build`. Never claim success without running them.
+6. Before saying "done": run the plan's Verify commands and report their real result. Root commands: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm build`. Never claim success without running them. Commit messages must be Conventional Commits. Husky runs lint-staged plus typecheck before a commit, commitlint on the message, and lint, format:check, typecheck, unit tests, and e2e tests before a push; do not pass `--no-verify` unless the user asks.
 7. Do not commit, push, or touch `specs/` or `.planning/` unless the user asks.
 8. Final message: what changed (file list), what was verified (commands + result), anything deviating from the plan or left open. Keep it short.
