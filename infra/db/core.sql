@@ -19,7 +19,14 @@ SELECT format(
 )
 WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'core_svc') \gexec
 
-ALTER ROLE core_svc WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD :'core_password';
+-- Only the password is changed on re-runs: on Neon the admin role is not a superuser,
+-- and Postgres forbids it to touch SUPERUSER even as NOSUPERUSER. The attributes above
+-- are fixed by CREATE ROLE and checked by verify-core.sql.
+ALTER ROLE core_svc WITH PASSWORD :'core_password';
+
+-- PostgreSQL 16+: the creator of a role may administer it but not SET ROLE to it,
+-- and creating a schema for another owner needs SET. Grant it to the admin.
+GRANT core_svc TO CURRENT_USER WITH SET TRUE;
 
 -- Schema owned by the role. Drizzle keeps its migrations table here too (migrationsSchema).
 CREATE SCHEMA IF NOT EXISTS core AUTHORIZATION core_svc;
