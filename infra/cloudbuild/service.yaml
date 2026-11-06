@@ -11,6 +11,7 @@ substitutions:
   _REGION: europe-west1
   _REPO: onemore
   _MAX_INSTANCES: '3'
+  _DB_SECRET: core-database-url
 
 serviceAccount: projects/${PROJECT_ID}/serviceAccounts/sa-cloudbuild@${PROJECT_ID}.iam.gserviceaccount.com
 
@@ -57,6 +58,7 @@ steps:
       - --service-account=${_RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com
       - --port=8080
       - --set-env-vars=NODE_ENV=production,LOG_LEVEL=info,APP_VERSION=${COMMIT_SHA}
+      - --set-secrets=DATABASE_URL=${_DB_SECRET}:latest
       - --no-traffic
       - --tag=candidate
       - --revision-suffix=${SHORT_SHA}
