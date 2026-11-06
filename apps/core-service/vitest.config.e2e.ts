@@ -11,6 +11,8 @@ export default defineConfig({
       PORT: '8080',
       LOG_LEVEL: 'error',
       APP_VERSION: 'e2e-version',
+      // The pool connects lazily: /health never reaches this address.
+      DATABASE_URL: 'postgresql://e2e:e2e@127.0.0.1:1/e2e',
     },
   },
   plugins: [

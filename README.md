@@ -31,6 +31,7 @@ NODE_ENV=production node apps/core-service/dist/main.js
 ```
 
 `GET /health` returns `{ "status": "ok", "version": "<APP_VERSION>" }` and does not touch a database.
+`GET /health/ready` does the same after a `SELECT 1`, and answers 503 if the database is unreachable. It wakes Neon, so use it by hand or in smoke checks, never on a schedule.
 
 ## Git hooks
 
@@ -90,4 +91,5 @@ Every variable in `apps/core-service/.env.example` is required and has no defaul
 
 - Local `pnpm dev`: `cp apps/core-service/.env.example apps/core-service/.env`. `@nestjs/config` loads that file; real environment variables take precedence over it.
 - Docker Compose sets its own values and does not read `.env`.
+- `DATABASE_URL` is the pooled connection string of the `core_svc` role. Locally it is the Compose database (`docker compose up -d db`, the role and schema come from `infra/db/core.sql`). To re-run the init scripts: `docker compose down -v && docker compose up -d db`.
 - Deploys (Cloud Run) must provide every variable, including `APP_VERSION`.

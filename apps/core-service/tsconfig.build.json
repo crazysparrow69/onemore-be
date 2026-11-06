@@ -6,6 +6,7 @@
     "dist",
     "**/*spec.ts",
     "vitest.config.ts",
-    "vitest.config.e2e.ts"
+    "vitest.config.e2e.ts",
+    "drizzle.config.ts"
   ]
 }

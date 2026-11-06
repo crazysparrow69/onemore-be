@@ -6,6 +6,7 @@ const valid = {
   PORT: '3000',
   LOG_LEVEL: 'debug',
   APP_VERSION: 'abc123',
+  DATABASE_URL: 'postgresql://core_svc:secret@localhost:5432/onemore',
 };
 
 describe('validateEnv', () => {
@@ -15,6 +16,7 @@ describe('validateEnv', () => {
       PORT: 3000,
       LOG_LEVEL: 'debug',
       APP_VERSION: 'abc123',
+      DATABASE_URL: 'postgresql://core_svc:secret@localhost:5432/onemore',
     });
   });
 
@@ -50,5 +52,32 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ ...valid, APP_VERSION: '' })).toThrow(
       /APP_VERSION: must not be empty/,
     );
+  });
+
+  it.each(['', 'not a url', 'http://localhost:5432/onemore'])(
+    'throws on an invalid DATABASE_URL (%j)',
+    (value) => {
+      expect(() => validateEnv({ ...valid, DATABASE_URL: value })).toThrow(
+        /DATABASE_URL:/,
+      );
+    },
+  );
+
+  it('does not put the connection string into the error message', () => {
+    const secret = 'super-secret-password';
+    expect(() =>
+      validateEnv({
+        ...valid,
+        DATABASE_URL: `mysql://core_svc:${secret}@localhost/onemore`,
+      }),
+    ).toThrow(/DATABASE_URL:/);
+    try {
+      validateEnv({
+        ...valid,
+        DATABASE_URL: `mysql://core_svc:${secret}@localhost/onemore`,
+      });
+    } catch (error) {
+      expect((error as Error).message).not.toContain(secret);
+    }
   });
 });
