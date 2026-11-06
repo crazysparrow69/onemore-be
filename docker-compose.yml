@@ -30,6 +30,10 @@ services:
       PORT: "8080"
       LOG_LEVEL: debug
       APP_VERSION: dev
+      DATABASE_URL: postgresql://core_svc:core_svc_local@db:5432/onemore
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - ./apps/core-service/src:/repo/apps/core-service/src
       - ./apps/core-service/tsconfig.json:/repo/apps/core-service/tsconfig.json

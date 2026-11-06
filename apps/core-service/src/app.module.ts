@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { validateEnv, type Env } from './config/env';
+import { DatabaseModule } from './db/database.module';
 import { HealthModule } from './health/health.module';
 import { createPinoHttpOptions } from './logger/pino-options';
 
@@ -21,6 +22,7 @@ import { createPinoHttpOptions } from './logger/pino-options';
         }),
       }),
     }),
+    DatabaseModule,
     HealthModule,
   ],
 })

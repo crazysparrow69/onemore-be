@@ -13,6 +13,21 @@ const port = z.string(required).transform((value, ctx) => {
   return Number(value);
 });
 
+const postgresUrl = z
+  .string(required)
+  .min(1, 'must not be empty')
+  .refine(
+    (value) => {
+      try {
+        const { protocol } = new URL(value);
+        return protocol === 'postgresql:' || protocol === 'postgres:';
+      } catch {
+        return false;
+      }
+    },
+    { message: 'must be a postgresql:// connection string' },
+  );
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production'], required),
   PORT: port,
@@ -21,6 +36,7 @@ export const envSchema = z.object({
     required,
   ),
   APP_VERSION: z.string(required).min(1, 'must not be empty'),
+  DATABASE_URL: postgresUrl,
 });
 
 export const ENV_KEYS = Object.keys(envSchema.shape);
