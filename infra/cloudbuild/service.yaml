@@ -1,0 +1,93 @@
+# One parametrized pipeline for every service. A trigger per service sets the
+# substitutions (see infra/gcp/05-trigger.sh). Runs on push to `main`.
+#
+# build -> push -> deploy without traffic (tag "candidate") -> smoke -> traffic.
+# Any failing step stops the build, and the previous revision keeps serving.
+# Migrations step is added in phase 2 (services with a database).
+
+substitutions:
+  _SERVICE: core-service
+  _RUNTIME_SA: sa-core
+  _REGION: europe-west1
+  _REPO: onemore
+  _MAX_INSTANCES: '3'
+
+serviceAccount: projects/${PROJECT_ID}/serviceAccounts/sa-cloudbuild@${PROJECT_ID}.iam.gserviceaccount.com
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  env:
+    - DOCKER_BUILDKIT=1
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - apps/${_SERVICE}/Dockerfile
+      - --target
+      - runtime
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${COMMIT_SHA}
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${COMMIT_SHA}
+
+  # Rule 15 flags are fixed here. Public access (--allow-unauthenticated) was set
+  # once at the first deploy; this account has no right to change IAM.
+  - id: deploy-candidate
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${COMMIT_SHA}
+      - --region=${_REGION}
+      - --min-instances=0
+      - --max-instances=${_MAX_INSTANCES}
+      - --cpu=1
+      - --memory=512Mi
+      - --cpu-boost
+      - --service-account=${_RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com
+      - --port=8080
+      - --set-env-vars=NODE_ENV=production,LOG_LEVEL=info,APP_VERSION=${COMMIT_SHA}
+      - --no-traffic
+      - --tag=candidate
+      - --revision-suffix=${SHORT_SHA}
+
+  - id: smoke
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        URL=$(gcloud run services describe ${_SERVICE} --region=${_REGION} \
+          --format='value(status.traffic.filter(tag:candidate).extract(url).flatten())')
+        echo "candidate url: $${URL}"
+        for i in $(seq 1 10); do
+          if curl -sf "$${URL}/health" -o health.json; then break; fi
+          echo "attempt $${i} failed, retrying"; sleep 3
+        done
+        cat health.json; echo
+        grep -q "\"version\":\"${COMMIT_SHA}\"" health.json
+
+  - id: switch-traffic
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update-traffic
+      - ${_SERVICE}
+      - --region=${_REGION}
+      - --to-latest
+      - --remove-tags=candidate
+
+timeout: 900s
