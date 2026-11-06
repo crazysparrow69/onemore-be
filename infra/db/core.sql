@@ -33,5 +33,9 @@ CREATE SCHEMA IF NOT EXISTS core AUTHORIZATION core_svc;
 ALTER SCHEMA core OWNER TO core_svc;
 
 -- The role may connect, but cannot create objects in `public`.
-SELECT format('GRANT CONNECT ON DATABASE %I TO core_svc', current_database()) \gexec
+-- CREATE on the database is needed because drizzle-orm's migrate() always runs
+-- `CREATE SCHEMA IF NOT EXISTS core` first, and Postgres checks this privilege even when
+-- the schema already exists. It gives no access to other schemas or tables: a schema
+-- created by another role stays private to its owner (see verify-core.sql).
+SELECT format('GRANT CONNECT, CREATE ON DATABASE %I TO core_svc', current_database()) \gexec
 REVOKE ALL ON SCHEMA public FROM PUBLIC;

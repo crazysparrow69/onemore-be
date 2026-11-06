@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Store the core_svc pooled connection string in Secret Manager; only sa-core may read it.
+# Store the core_svc pooled connection string in Secret Manager; only sa-core (runtime)
+# and sa-cloudbuild (migrate step) may read it.
 # Input: infra/gcp/.env.neon-core (made by 06-neon-core.sh). Nothing secret is printed.
 # Free tier = 6 active versions: when rotating, DESTROY the old version
 #   (gcloud secrets versions destroy <N> --secret=core-database-url).
@@ -16,3 +17,7 @@ printf '%s' "${CORE_DATABASE_URL}" | gcloud secrets versions add "${SECRET}" --d
 
 gcloud secrets add-iam-policy-binding "${SECRET}" \
   --member="serviceAccount:${SA_CORE}" --role=roles/secretmanager.secretAccessor >/dev/null
+
+# Cloud Build reads the same secret for the migrate step (direct string is derived from it).
+gcloud secrets add-iam-policy-binding "${SECRET}" \
+  --member="serviceAccount:${SA_BUILD}" --role=roles/secretmanager.secretAccessor >/dev/null

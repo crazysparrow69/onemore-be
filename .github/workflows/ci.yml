@@ -55,6 +55,8 @@ jobs:
         run: pnpm test
       - name: E2E tests
         run: pnpm test:e2e
+      - name: Integration tests (Testcontainers)
+        run: pnpm test:integration
 
   image:
     runs-on: ubuntu-latest
