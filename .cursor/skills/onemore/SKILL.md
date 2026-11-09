@@ -35,7 +35,7 @@ Do NOT add a dependency that is not in this table or the plan. If one seems nece
 
 ## 2. Services and scope
 
-- `core-service` (schema `core`, exists): accounts, exercises, templates, schedule, sessions (workouts, sets), `internal`. Today it only serves `GET /health`.
+- `core-service` (schema `core`, exists): users, exercises, templates, schedule, sessions (workouts, sets), `internal`. HTTP routes use the global prefix `api`, except `GET /health` and `GET /health/ready`. Today it serves those health routes plus `GET /api/me` and `PUT /api/me`.
 - `nutrition-service` (schema `nutrition`): body, goals, weight, targets (Mifflin-St Jeor), food-log, food-suggestions, `internal`.
 - `ai-service`: **v0.2, do not create or reference it in MVP code.**
 - MVP = v0.1 = auth, exercises, workouts + calendar, nutrition diary. NOT in MVP: AI, charts, product database, barcode, social, mobile, GDPR export, Pub/Sub, Cloudinary. Do not build or scaffold these.
@@ -46,7 +46,7 @@ Details: [reference/architecture.md](reference/architecture.md). Scope, roadmap,
 
 **Security / data**
 1. Every repository query filters by owner `userId`; reads go through `AccessPolicy.canRead(viewer, owner, resource)`. `userId` comes only from the verified JWT, never from body, query, or params.
-2. All services are public, so every route needs `UserJwtGuard`; `/internal/*` needs `ServiceAuthGuard`. Guards must have tests: no token -> 401, wrong account -> 403, wrong `aud` -> 403.
+2. All services are public, so every route needs `UserJwtGuard` unless it is marked `@Public()` (health only); `/internal/*` needs `ServiceAuthGuard`. A user JWT that is missing, malformed, expired, signed by the wrong key, or has the wrong issuer or `aud` is 401: a bad audience means the token is not ours, not that the user lacks a role. 403 is only for an authenticated user whose `users.role` is missing or not allowed. Service-to-service ID tokens still reject a wrong `aud` with 403. Guard tests cover each of these.
 3. Never log tokens, passwords, connection strings, or diary/food contents (pino `redact`).
 4. No secrets at image build time (no ARG/ENV). Secrets only from Secret Manager at runtime; locally `.env` (git-ignored) + committed `.env.example`.
 

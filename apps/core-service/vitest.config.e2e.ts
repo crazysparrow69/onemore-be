@@ -13,6 +13,7 @@ export default defineConfig({
       APP_VERSION: 'e2e-version',
       // The pool connects lazily: /health never reaches this address.
       DATABASE_URL: 'postgresql://e2e:e2e@127.0.0.1:1/e2e',
+      NEON_AUTH_URL: 'https://auth.example.test/neondb/auth',
     },
   },
   plugins: [

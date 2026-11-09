@@ -17,7 +17,7 @@ Read when touching schema, migrations, repositories, Drizzle, local Postgres, se
 - Expand -> contract. Contract (drop column/table) in a separate PR after one successful deploy. Rollback never touches the DB; fix forward.
 
 ## Tables (MVP)
-- **core:** `accounts` (user_id=sub, units, language, IANA time zone) · `training_profiles` · `exercises` (owner_id, visibility private|link|public, type, primary/secondary muscles, `source`+`source_id` for idempotent import, `archived_at`) · `exercise_translations` · `templates`, `template_exercises` · `schedule_rules`, `planned_workouts` · `workout_sessions`, `session_exercises`, `sets`.
+- **core:** `users` (id = Neon `sub`, unique email, role `user|admin` default `user`, language, time zone). `accounts` from migration `0000` is unused and is dropped in a later contract migration, not in the same change that created `users`. · `training_profiles` · `exercises` (owner_id, visibility private|link|public, type, primary/secondary muscles, `source`+`source_id` for idempotent import, `archived_at`) · `exercise_translations` · `templates`, `template_exercises` · `schedule_rules`, `planned_workouts` · `workout_sessions`, `session_exercises`, `sets`.
 - **nutrition:** `body_profiles` · `goals`, `target_snapshots` (`effective_from`) · `weight_entries` · `food_entries` · `user_foods` (autosuggest history, `pg_trgm` index).
 - **ai (v0.2):** `ai_jobs`, `ai_reviews`, `ai_usage`. Do not create yet.
 

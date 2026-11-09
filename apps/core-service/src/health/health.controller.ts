@@ -5,9 +5,11 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Public } from '../modules/auth/auth.decorators';
 import type { Env } from '../config/env';
 import { DatabaseHealthService } from '../db/database-health.service';
 
+@Public()
 @Controller('health')
 export class HealthController {
   private readonly logger = new Logger(HealthController.name);
@@ -17,7 +19,6 @@ export class HealthController {
     private readonly databaseHealth: DatabaseHealthService,
   ) {}
 
-  // Does not touch the database: keeps Neon asleep.
   @Get()
   getHealth(): { status: 'ok'; version: string } {
     return {
@@ -26,7 +27,6 @@ export class HealthController {
     };
   }
 
-  // Wakes the database. For manual checks and smoke only: never call on a schedule.
   @Get('ready')
   async getReady(): Promise<{ status: 'ok'; version: string }> {
     try {

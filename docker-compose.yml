@@ -31,6 +31,7 @@ services:
       LOG_LEVEL: debug
       APP_VERSION: dev
       DATABASE_URL: postgresql://core_svc:core_svc_local@db:5432/onemore
+      NEON_AUTH_URL: https://ep-shy-leaf-b9dtc17c.neonauth.c-7.eu-central-1.aws.neon.tech/neondb/auth
     depends_on:
       db:
         condition: service_healthy

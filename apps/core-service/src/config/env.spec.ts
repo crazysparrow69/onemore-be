@@ -7,6 +7,7 @@ const valid = {
   LOG_LEVEL: 'debug',
   APP_VERSION: 'abc123',
   DATABASE_URL: 'postgresql://core_svc:secret@localhost:5432/onemore',
+  NEON_AUTH_URL: 'https://auth.example.test/neondb/auth',
 };
 
 describe('validateEnv', () => {
@@ -17,6 +18,7 @@ describe('validateEnv', () => {
       LOG_LEVEL: 'debug',
       APP_VERSION: 'abc123',
       DATABASE_URL: 'postgresql://core_svc:secret@localhost:5432/onemore',
+      NEON_AUTH_URL: 'https://auth.example.test/neondb/auth',
     });
   });
 
@@ -80,4 +82,13 @@ describe('validateEnv', () => {
       expect((error as Error).message).not.toContain(secret);
     }
   });
+
+  it.each(['', 'not a url', 'http://auth.example.test/neondb/auth'])(
+    'throws on an invalid NEON_AUTH_URL (%j)',
+    (value) => {
+      expect(() => validateEnv({ ...valid, NEON_AUTH_URL: value })).toThrow(
+        /NEON_AUTH_URL:/,
+      );
+    },
+  );
 });

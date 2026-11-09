@@ -13,18 +13,18 @@ Read when working on services, auth, API routes, repo layout, contracts. Spec st
 | `/api/body`, `/api/goals`, `/api/weight`, `/api/nutrition` | nutrition-service |
 | `/api/ai` (v0.2) | ai-service |
 
-Paths are by domain, not by service. `/internal/*` is NOT in rewrites but is still internet-reachable, so it must verify the Google ID token in code.
+Paths are by domain, not by service. core-service sets the Nest global prefix `api` and excludes `GET /health` and `GET /health/ready`, so a Vercel rewrite of `/api/*` reaches the controller path unchanged. `/internal/*` is NOT in rewrites but is still internet-reachable, so it must verify the Google ID token in code.
 No CORS needed (same domain). Calendar = two parallel requests from the web; if nutrition is down, calendar renders without calories. Onboarding: web writes profile to core, body+goal to nutrition; idempotent; "onboarding done" flag is set last.
 
 ## core-service modules
-`accounts` (language, units, IANA time zone, onboarding flag, training profile) · `exercises` (system catalog from free-exercise-db + private ones, visibility) · `templates` · `schedule` (weekly rules + planned day) · `sessions` (workouts, sets, comments, "last time" hints) · `internal` (compact summaries for AI).
+`users` (`GET/PUT /api/me`: id = Neon `sub`, email, role `user|admin`, language, time zone; email and name on the response come from the JWT) · `exercises` (system catalog from free-exercise-db + private ones, visibility) · `templates` · `schedule` (weekly rules + planned day) · `sessions` (workouts, sets, comments, "last time" hints) · `internal` (compact summaries for AI).
 
 ## nutrition-service modules
 `body` (sex, birth date, height, activity) · `goals` (goal + weekly rate, with history) · `weight` (log) · `targets` (kcal/macros by Mifflin-St Jeor with a safe lower bound, history via `effective_from`) · `food-log` · `food-suggestions` (pg_trgm over own history) · `internal`.
 Body + goal live here (not in a "profile") because new targets are written in the same transaction as weight/goal changes.
 
 ## Auth
-- **User request:** `Authorization: Bearer <Neon JWT>`; guard from `packages/nest-common` verifies signature via JWKS (`jose`, keys cached in memory); `userId = sub`. JWT lives 15 min. Roles (if ever needed) are stored in our own table: JWT cannot carry custom claims.
+- **User request:** `Authorization: Bearer <Neon JWT>`; `JwtVerifierService` verifies EdDSA via JWKS (`jose`, `createRemoteJWKSet`, keys cached in memory). `iss` and `aud` are the origin of `NEON_AUTH_URL`. `userId = sub`. JWT lives 15 min and has no custom claims, so the app role lives in `core.users` (Neon’s own `role` claim is not our role). A user token with the wrong `aud` is 401, not 403.
 - **Service to service (v0.2):** caller gets a Google ID token via `getIdTokenClient` (`aud` = receiver URL). Receiver `ServiceAuthGuard` (`google-auth-library` `verifyIdToken`) checks signature, `aud`, and that caller email is on the allow-list. User JWT is NOT used for these calls; `userId` is passed as a parameter.
 - Locally `SERVICE_AUTH=none` (HTTP client sends no ID token). User JWT in dev is real Neon Auth; tests sign their own tokens via `packages/testing`.
 

@@ -28,6 +28,21 @@ const postgresUrl = z
     { message: 'must be a postgresql:// connection string' },
   );
 
+const httpsUrl = z
+  .string(required)
+  .min(1, 'must not be empty')
+  .refine(
+    (value) => {
+      try {
+        const url = new URL(value);
+        return url.protocol === 'https:' && url.hostname.length > 0;
+      } catch {
+        return false;
+      }
+    },
+    { message: 'must be an https URL' },
+  );
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production'], required),
   PORT: port,
@@ -37,6 +52,7 @@ export const envSchema = z.object({
   ),
   APP_VERSION: z.string(required).min(1, 'must not be empty'),
   DATABASE_URL: postgresUrl,
+  NEON_AUTH_URL: httpsUrl,
 });
 
 export const ENV_KEYS = Object.keys(envSchema.shape);

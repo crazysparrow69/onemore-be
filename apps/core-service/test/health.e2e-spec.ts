@@ -2,6 +2,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { configureApp } from '../src/app.setup';
 import { AppModule } from '../src/app.module';
 
 describe('GET /health', () => {
@@ -13,6 +14,7 @@ describe('GET /health', () => {
     }).compile();
 
     app = moduleRef.createNestApplication<NestExpressApplication>();
+    configureApp(app);
     await app.init();
   });
 
