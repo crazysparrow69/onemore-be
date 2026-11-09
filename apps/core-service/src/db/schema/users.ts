@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
-import { check, text, timestamp } from 'drizzle-orm/pg-core';
-import { coreSchema } from './core-schema';
+import { check, pgSchema, text, timestamp } from 'drizzle-orm/pg-core';
+
+export const coreSchema = pgSchema('core');
 
 export const USER_ROLES = ['user', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
