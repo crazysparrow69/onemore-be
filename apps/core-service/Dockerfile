@@ -17,7 +17,7 @@ FROM deps AS development
 COPY apps/core-service apps/core-service
 ENV NODE_ENV=development
 WORKDIR /repo/apps/core-service
-EXPOSE 8080
+EXPOSE 5001
 CMD ["pnpm", "exec", "nest", "start", "--watch"]
 
 FROM deps AS build

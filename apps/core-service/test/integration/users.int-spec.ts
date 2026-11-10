@@ -54,7 +54,7 @@ describe('users (real Postgres)', () => {
     );
 
     process.env.NODE_ENV = 'test';
-    process.env.PORT = '3001';
+    process.env.PORT = '5001';
     process.env.LOG_LEVEL = 'error';
     process.env.APP_VERSION = 'test';
     process.env.DATABASE_URL = coreUrl;

@@ -24,14 +24,14 @@ services:
       dockerfile: apps/core-service/Dockerfile
       target: development
     ports:
-      - "8080:8080"
+      - "5001:5001"
     environment:
       NODE_ENV: development
-      PORT: "8080"
+      PORT: "5001"
       LOG_LEVEL: debug
       APP_VERSION: dev
       DATABASE_URL: postgresql://core_svc:core_svc_local@db:5432/onemore
-      NEON_AUTH_URL: https://ep-shy-leaf-b9dtc17c.neonauth.c-7.eu-central-1.aws.neon.tech/neondb/auth
+      NEON_AUTH_URL: https://ep-wild-dream-b94q2xh7.neonauth.c-7.eu-central-1.aws.neon.tech/neondb/auth
     depends_on:
       db:
         condition: service_healthy
@@ -41,7 +41,7 @@ services:
       - ./apps/core-service/tsconfig.build.json:/repo/apps/core-service/tsconfig.build.json
       - ./apps/core-service/nest-cli.json:/repo/apps/core-service/nest-cli.json
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5001/health"]
       interval: 5s
       timeout: 5s
       retries: 12

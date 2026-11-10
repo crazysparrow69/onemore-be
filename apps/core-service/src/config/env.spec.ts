@@ -3,7 +3,7 @@ import { ENV_KEYS, validateEnv } from './env';
 
 const valid = {
   NODE_ENV: 'production',
-  PORT: '3000',
+  PORT: '5001',
   LOG_LEVEL: 'debug',
   APP_VERSION: 'abc123',
   DATABASE_URL: 'postgresql://core_svc:secret@localhost:5432/onemore',
@@ -14,7 +14,7 @@ describe('validateEnv', () => {
   it('accepts valid values and converts PORT to a number', () => {
     expect(validateEnv(valid)).toEqual({
       NODE_ENV: 'production',
-      PORT: 3000,
+      PORT: 5001,
       LOG_LEVEL: 'debug',
       APP_VERSION: 'abc123',
       DATABASE_URL: 'postgresql://core_svc:secret@localhost:5432/onemore',
