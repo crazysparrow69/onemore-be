@@ -16,3 +16,6 @@ printf '%s' "${CORE_DATABASE_URL}" | gcloud secrets versions add "${SECRET}" --d
 
 gcloud secrets add-iam-policy-binding "${SECRET}" \
   --member="serviceAccount:${SA_CORE}" --role=roles/secretmanager.secretAccessor >/dev/null
+# The migrate step in Cloud Build reads the same secret. Runtime stays on sa-core.
+gcloud secrets add-iam-policy-binding "${SECRET}" \
+  --member="serviceAccount:${SA_BUILD}" --role=roles/secretmanager.secretAccessor >/dev/null

@@ -1,9 +1,8 @@
 # One parametrized pipeline for every service. A trigger per service sets the
 # substitutions (see infra/gcp/05-trigger.sh). Runs on push to `main`.
 #
-# build -> push -> deploy without traffic (tag "candidate") -> smoke -> traffic.
+# build -> push -> migrate -> deploy without traffic (tag "candidate") -> smoke -> traffic.
 # Any failing step stops the build, and the previous revision keeps serving.
-# Migrations step is added in phase 2 (services with a database).
 
 substitutions:
   _SERVICE: core-service
@@ -39,6 +38,16 @@ steps:
     args:
       - push
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${COMMIT_SHA}
+
+  # Direct connection: runMigrations strips "-pooler" from the host. A failure
+  # here stops the build, so the previous revision keeps serving.
+  - id: migrate
+    name: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${COMMIT_SHA}
+    entrypoint: node
+    args:
+      - dist/migrate.js
+    secretEnv:
+      - DATABASE_URL
 
   # Rule 15 flags are fixed here. Public access (--allow-unauthenticated) was set
   # once at the first deploy; this account has no right to change IAM.
@@ -80,6 +89,12 @@ steps:
         done
         cat health.json; echo
         grep -q "\"version\":\"${COMMIT_SHA}\"" health.json
+        for i in $(seq 1 10); do
+          if curl -sf "$${URL}/health/ready" -o ready.json; then break; fi
+          echo "ready attempt $${i} failed, retrying"; sleep 3
+        done
+        cat ready.json; echo
+        grep -q "\"version\":\"${COMMIT_SHA}\"" ready.json
 
   - id: switch-traffic
     name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
@@ -94,3 +109,8 @@ steps:
       - --remove-tags=candidate
 
 timeout: 900s
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/${PROJECT_ID}/secrets/${_DB_SECRET}/versions/latest
+      env: DATABASE_URL

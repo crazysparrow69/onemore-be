@@ -54,8 +54,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       };
     }
 
+    const message =
+      exception instanceof Error ? exception.message : 'unknown error';
+    const pgCode = postgresCode(exception);
     this.logger.error(
-      exception instanceof Error ? exception.message : 'unknown error',
+      pgCode === undefined ? message : `${message} (pg ${pgCode})`,
+      exception instanceof Error ? exception.stack : undefined,
     );
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -63,6 +67,23 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message: 'Internal server error',
     };
   }
+}
+
+function postgresCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+  if (
+    'code' in error &&
+    typeof error.code === 'string' &&
+    /^[0-9A-Z]{5}$/.test(error.code)
+  ) {
+    return error.code;
+  }
+  if ('cause' in error) {
+    return postgresCode(error.cause);
+  }
+  return undefined;
 }
 
 function isErrorBody(value: unknown): value is ErrorBody {
