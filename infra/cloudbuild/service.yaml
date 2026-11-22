@@ -45,7 +45,7 @@ steps:
     name: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${COMMIT_SHA}
     entrypoint: node
     args:
-      - dist/migrate.js
+      - /app/dist/migrate.js
     secretEnv:
       - DATABASE_URL
 
