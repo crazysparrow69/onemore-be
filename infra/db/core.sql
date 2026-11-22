@@ -34,4 +34,5 @@ ALTER SCHEMA core OWNER TO core_svc;
 
 -- The role may connect, but cannot create objects in `public`.
 SELECT format('GRANT CONNECT ON DATABASE %I TO core_svc', current_database()) \gexec
+SELECT format('GRANT CREATE ON DATABASE %I TO core_svc', current_database()) \gexec
 REVOKE ALL ON SCHEMA public FROM PUBLIC;

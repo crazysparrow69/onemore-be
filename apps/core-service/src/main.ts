@@ -14,7 +14,6 @@ async function bootstrap(): Promise<void> {
   app.enableShutdownHooks();
   const config = app.get<ConfigService<Env, true>>(ConfigService);
   if (config.get('NODE_ENV', { infer: true }) !== 'production') {
-    // Swagger UI for local work only: production does not publish its docs.
     SwaggerModule.setup('api/docs', app, buildOpenApiDocument(app));
   }
   await app.listen(config.get('PORT', { infer: true }), '0.0.0.0');

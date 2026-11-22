@@ -11,8 +11,10 @@ const row = {
   id: 'user-1',
   email: 'a@example.test',
   name: null,
+  nickname: null,
   role: 'user',
   language: 'en',
+  units: 'kg',
   timeZone: 'Europe/Kyiv',
   createdAt: '2026-01-01T00:00:00.000Z',
 };
@@ -26,9 +28,8 @@ describe('UsersController response contract', () => {
       providers: [
         {
           provide: UsersService,
-          // A field the contract does not list, as a leaked DB column would be.
           useValue: {
-            getMe: vi
+            getCurrentUser: vi
               .fn()
               .mockResolvedValue({ ...row, passwordHash: 'secret' }),
           },

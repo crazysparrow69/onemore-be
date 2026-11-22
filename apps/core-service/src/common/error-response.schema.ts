@@ -1,8 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-// Mirrors `ErrorBody` in app.exception.ts: the one shape AllExceptionsFilter
-// returns for every error.
 export const errorResponseSchema = z
   .object({
     statusCode: z.number().int(),

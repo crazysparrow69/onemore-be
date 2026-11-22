@@ -55,7 +55,7 @@
     },
     "/api/me": {
       "get": {
-        "operationId": "UsersController_getMe",
+        "operationId": "UsersController_getCurrentUser",
         "parameters": [],
         "responses": {
           "200": {
@@ -95,18 +95,18 @@
           }
         ],
         "tags": [
-          "me"
+          "users"
         ]
       },
       "put": {
-        "operationId": "UsersController_updateMe",
+        "operationId": "UsersController_updateCurrentUser",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateMe"
+                "$ref": "#/components/schemas/UpdateCurrentUser"
               }
             }
           }
@@ -141,6 +141,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "Conflict: the value is already used (for example EMAIL_TAKEN, NICKNAME_TAKEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -149,7 +159,81 @@
           }
         ],
         "tags": [
-          "me"
+          "users"
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_patchCurrentUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchCurrentUser"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The signed-in user after a partial update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse_Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: the value is already used (for example EMAIL_TAKEN, NICKNAME_TAKEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "users"
         ]
       }
     }
@@ -225,6 +309,10 @@
             "type": "string",
             "nullable": true
           },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
           "role": {
             "type": "string",
             "enum": [
@@ -234,6 +322,13 @@
           },
           "language": {
             "type": "string"
+          },
+          "units": {
+            "type": "string",
+            "enum": [
+              "kg",
+              "lb"
+            ]
           },
           "timeZone": {
             "type": "string"
@@ -247,20 +342,68 @@
           "id",
           "email",
           "name",
+          "nickname",
           "role",
           "language",
+          "units",
           "timeZone",
           "createdAt"
         ],
         "additionalProperties": false
       },
-      "UpdateMe": {
+      "UpdateCurrentUser": {
         "type": "object",
         "properties": {
           "language": {
             "type": "string",
             "enum": [
-              "en"
+              "en",
+              "uk"
+            ]
+          },
+          "timeZone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "units": {
+            "type": "string",
+            "enum": [
+              "kg",
+              "lb"
+            ]
+          }
+        },
+        "required": [
+          "language",
+          "timeZone"
+        ],
+        "additionalProperties": false
+      },
+      "PatchCurrentUser": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "nickname": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "uk"
+            ]
+          },
+          "units": {
+            "type": "string",
+            "enum": [
+              "kg",
+              "lb"
             ]
           },
           "timeZone": {
@@ -269,10 +412,6 @@
             "maxLength": 100
           }
         },
-        "required": [
-          "language",
-          "timeZone"
-        ],
         "additionalProperties": false
       }
     }

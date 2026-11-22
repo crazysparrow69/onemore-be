@@ -182,6 +182,134 @@ describe('users (real Postgres)', () => {
     expect(bodyOf(invalid).code).toBe('VALIDATION_FAILED');
   });
 
+  it('PUT stores the name from the token once and defaults units to kg', async () => {
+    const token = await jwt.sign({
+      sub: 'user-p',
+      email: 'p@example.com',
+      name: 'Pat',
+    });
+    const created = await request(app.getHttpServer())
+      .put('/api/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ language: 'uk', timeZone: 'Europe/Kyiv' });
+    expect(created.status).toBe(200);
+    expect(bodyOf(created)).toMatchObject({
+      name: 'Pat',
+      nickname: null,
+      language: 'uk',
+      units: 'kg',
+    });
+
+    const renamed = await request(app.getHttpServer())
+      .patch('/api/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Patricia', units: 'lb' });
+    expect(renamed.status).toBe(200);
+
+    const again = await request(app.getHttpServer())
+      .put('/api/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ language: 'en', timeZone: 'UTC' });
+    expect(bodyOf(again)).toMatchObject({
+      name: 'Patricia',
+      units: 'lb',
+      language: 'en',
+      timeZone: 'UTC',
+    });
+  });
+
+  it('PATCH changes only the given fields and never the role', async () => {
+    const token = await jwt.sign({
+      sub: 'user-a',
+      email: 'from-token@example.com',
+      name: 'Ada',
+    });
+    const before = await request(app.getHttpServer())
+      .get('/api/me')
+      .set('Authorization', `Bearer ${token}`);
+
+    const response = await request(app.getHttpServer())
+      .patch('/api/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nickname: ' Ada_L ', name: 'Ada Lovelace' });
+
+    expect(response.status).toBe(200);
+    expect(bodyOf(response)).toMatchObject({
+      nickname: 'ada_l',
+      name: 'Ada Lovelace',
+      language: bodyOf(before).language,
+      timeZone: bodyOf(before).timeZone,
+      units: bodyOf(before).units,
+      role: 'admin',
+    });
+
+    const cleared = await request(app.getHttpServer())
+      .patch('/api/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: null });
+    expect(bodyOf(cleared).name).toBe('Ada');
+  });
+
+  it('PATCH answers 409 NICKNAME_TAKEN for a nickname of another user, in any case', async () => {
+    const other = await jwt.sign({
+      sub: 'user-c',
+      email: 'c@example.com',
+      name: 'Cara',
+    });
+    const taken = await request(app.getHttpServer())
+      .patch('/api/me')
+      .set('Authorization', `Bearer ${other}`)
+      .send({ nickname: 'ADA_L' });
+    expect(taken.status).toBe(409);
+    expect(bodyOf(taken).code).toBe('NICKNAME_TAKEN');
+
+    const own = await jwt.sign({
+      sub: 'user-a',
+      email: 'from-token@example.com',
+      name: 'Ada',
+    });
+    const same = await request(app.getHttpServer())
+      .patch('/api/me')
+      .set('Authorization', `Bearer ${own}`)
+      .send({ nickname: 'ada_l' });
+    expect(same.status).toBe(200);
+  });
+
+  it('PATCH is 404 for an unknown user and 400 for a bad or empty body', async () => {
+    const unknown = await jwt.sign({
+      sub: 'user-nobody',
+      email: 'nobody@example.com',
+      name: 'Nobody',
+    });
+    const missing = await request(app.getHttpServer())
+      .patch('/api/me')
+      .set('Authorization', `Bearer ${unknown}`)
+      .send({ units: 'lb' });
+    expect(missing.status).toBe(404);
+    expect(bodyOf(missing).code).toBe('USER_NOT_FOUND');
+
+    const token = await jwt.sign({
+      sub: 'user-a',
+      email: 'from-token@example.com',
+      name: 'Ada',
+    });
+    for (const body of [{}, { nickname: 'x' }, { role: 'admin' }]) {
+      const response = await request(app.getHttpServer())
+        .patch('/api/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+      expect(response.status).toBe(400);
+      expect(bodyOf(response).code).toBe('VALIDATION_FAILED');
+    }
+  });
+
+  it('PATCH needs a token', async () => {
+    const response = await request(app.getHttpServer())
+      .patch('/api/me')
+      .send({ units: 'lb' });
+    expect(response.status).toBe(401);
+  });
+
   it('rejects /api/me without a token', async () => {
     const response = await request(app.getHttpServer()).get('/api/me');
     expect(response.status).toBe(401);
