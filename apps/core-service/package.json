@@ -14,7 +14,8 @@
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "vitest run --config vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "test:int": "vitest run --config vitest.config.int.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

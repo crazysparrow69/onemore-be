@@ -1,9 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { UNITS } from '../../db/schema/users';
 
-export const LANGUAGES = ['en'] as const;
+export const LANGUAGES = ['en', 'uk'] as const;
 
-const timeZone = z
+export const timeZone = z
   .string()
   .min(1)
   .max(100)
@@ -19,13 +20,16 @@ const timeZone = z
     { message: 'must be a valid IANA time zone' },
   );
 
-export const updateMeSchema = z
+export const updateCurrentUserSchema = z
   .strictObject({
     language: z.enum(LANGUAGES),
     timeZone,
+    units: z.enum(UNITS).optional(),
   })
-  .meta({ id: 'UpdateMe' });
+  .meta({ id: 'UpdateCurrentUser' });
 
-export class UpdateMeDto extends createZodDto(updateMeSchema) {}
+export class UpdateCurrentUserDto extends createZodDto(
+  updateCurrentUserSchema,
+) {}
 
-export type UpdateMe = z.infer<typeof updateMeSchema>;
+export type UpdateCurrentUser = z.infer<typeof updateCurrentUserSchema>;

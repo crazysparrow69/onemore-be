@@ -1,5 +1,3 @@
-// Imported first by generate.ts. AppModule validates the environment as soon
-// as it is imported, so these fixed fake values must be set before that.
 process.env.NODE_ENV = 'test';
 process.env.PORT = '8080';
 process.env.LOG_LEVEL = 'error';

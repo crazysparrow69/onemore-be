@@ -1,2 +1,2 @@
-export { coreSchema, users } from './users';
-export type { UserRole } from './users';
+export { coreSchema, users, UNITS, USER_ROLES } from './users';
+export type { Units, UserRole } from './users';

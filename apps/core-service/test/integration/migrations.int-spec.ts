@@ -62,43 +62,21 @@ describe('core schema, role and migrations (real Postgres)', () => {
       runMigrations(coreUrl, migrationsFolder),
     ]);
 
-    expect(await appliedMigrations()).toBe(2);
+    expect(await appliedMigrations()).toBe(4);
   });
 
   it('is idempotent: running again changes nothing', async () => {
     await runMigrations(coreUrl, migrationsFolder);
 
-    expect(await appliedMigrations()).toBe(2);
+    expect(await appliedMigrations()).toBe(4);
   });
 
-  it('creates core.accounts with the expected columns', async () => {
+  it('drops the unused core.accounts table', async () => {
     const result = await core.query(
-      `select column_name, is_nullable from information_schema.columns
-       where table_schema = 'core' and table_name = 'accounts'
-       order by column_name`,
+      `select count(*)::int as n from information_schema.tables
+       where table_schema = 'core' and table_name = 'accounts'`,
     );
-    expect(result.rows).toEqual([
-      { column_name: 'created_at', is_nullable: 'NO' },
-      { column_name: 'language', is_nullable: 'NO' },
-      { column_name: 'onboarding_completed_at', is_nullable: 'YES' },
-      { column_name: 'time_zone', is_nullable: 'NO' },
-      { column_name: 'units', is_nullable: 'NO' },
-      { column_name: 'updated_at', is_nullable: 'NO' },
-      { column_name: 'user_id', is_nullable: 'NO' },
-    ]);
-  });
-
-  it('accounts accepts kg and lb and rejects other units', async () => {
-    await core.query(
-      `insert into core.accounts (user_id, units, language, time_zone)
-       values ('user-a', 'kg', 'en', 'Europe/Kyiv')`,
-    );
-    await expect(
-      core.query(
-        `insert into core.accounts (user_id, units, language, time_zone)
-         values ('user-b', 'stone', 'en', 'Europe/Kyiv')`,
-      ),
-    ).rejects.toThrow(/accounts_units_check/);
+    expect(result.rows).toEqual([{ n: 0 }]);
   });
 
   it('creates core.users with the expected columns', async () => {
@@ -113,12 +91,19 @@ describe('core schema, role and migrations (real Postgres)', () => {
       { column_name: 'email', is_nullable: 'NO', column_default: null },
       { column_name: 'id', is_nullable: 'NO', column_default: null },
       { column_name: 'language', is_nullable: 'NO', column_default: null },
+      { column_name: 'name', is_nullable: 'YES', column_default: null },
+      { column_name: 'nickname', is_nullable: 'YES', column_default: null },
       {
         column_name: 'role',
         is_nullable: 'NO',
         column_default: "'user'::text",
       },
       { column_name: 'time_zone', is_nullable: 'NO', column_default: null },
+      {
+        column_name: 'units',
+        is_nullable: 'NO',
+        column_default: "'kg'::text",
+      },
       { column_name: 'updated_at', is_nullable: 'NO', column_default: 'now()' },
     ]);
   });
@@ -146,6 +131,43 @@ describe('core schema, role and migrations (real Postgres)', () => {
          values ('user-c', 'a@example.com', 'en', 'Europe/Kyiv')`,
       ),
     ).rejects.toThrow(/users_email_unique/);
+  });
+
+  it('users defaults units to kg and rejects other units', async () => {
+    await core.query(
+      `insert into core.users (id, email, language, time_zone)
+       values ('user-u1', 'u1@example.com', 'en', 'Europe/Kyiv')`,
+    );
+    const inserted = await core.query<{ units: string }>(
+      `select units from core.users where id = 'user-u1'`,
+    );
+    expect(inserted.rows[0]?.units).toBe('kg');
+
+    await expect(
+      core.query(
+        `insert into core.users (id, email, units, language, time_zone)
+         values ('user-u2', 'u2@example.com', 'stone', 'en', 'Europe/Kyiv')`,
+      ),
+    ).rejects.toThrow(/users_units_check/);
+  });
+
+  it('users keep nicknames unique and allow many without one', async () => {
+    await core.query(
+      `insert into core.users (id, email, nickname, language, time_zone)
+       values ('user-n1', 'n1@example.com', 'ada', 'en', 'Europe/Kyiv')`,
+    );
+    await expect(
+      core.query(
+        `insert into core.users (id, email, nickname, language, time_zone)
+         values ('user-n2', 'n2@example.com', 'ada', 'en', 'Europe/Kyiv')`,
+      ),
+    ).rejects.toThrow(/users_nickname_unique/);
+
+    await core.query(
+      `insert into core.users (id, email, language, time_zone)
+       values ('user-n3', 'n3@example.com', 'en', 'Europe/Kyiv'),
+              ('user-n4', 'n4@example.com', 'en', 'Europe/Kyiv')`,
+    );
   });
 
   it('core_svc cannot create anything outside its own schema', async () => {

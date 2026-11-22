@@ -1,14 +1,15 @@
-import { Body, Controller, Get, Put } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ZodResponse } from 'nestjs-zod';
 import { ApiErrorResponses } from '../../common/api-error-responses.decorator';
 import { CurrentUser } from '../auth/auth.decorators';
 import type { AuthUser } from '../auth/auth.types';
-import { UpdateMeDto } from './update-me.schema';
+import { PatchCurrentUserDto } from './patch-current-user.schema';
+import { UpdateCurrentUserDto } from './update-current-user.schema';
 import { UserResponseDto, type UserResponse } from './user.response';
 import { UsersService } from './users.service';
 
-@ApiTags('me')
+@ApiTags('users')
 @ApiBearerAuth()
 @Controller()
 export class UsersController {
@@ -21,8 +22,8 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiErrorResponses(401, 404)
-  getMe(@CurrentUser() user: AuthUser): Promise<UserResponse> {
-    return this.users.getMe(user);
+  getCurrentUser(@CurrentUser() user: AuthUser): Promise<UserResponse> {
+    return this.users.getCurrentUser(user);
   }
 
   @Put('me')
@@ -31,11 +32,25 @@ export class UsersController {
     description: 'The signed-in user after the update (created if new)',
     type: UserResponseDto,
   })
-  @ApiErrorResponses(400, 401)
-  updateMe(
+  @ApiErrorResponses(400, 401, 409)
+  updateCurrentUser(
     @CurrentUser() user: AuthUser,
-    @Body() body: UpdateMeDto,
+    @Body() body: UpdateCurrentUserDto,
   ): Promise<UserResponse> {
-    return this.users.updateMe(user, body);
+    return this.users.updateCurrentUser(user, body);
+  }
+
+  @Patch('me')
+  @ZodResponse({
+    status: 200,
+    description: 'The signed-in user after a partial update',
+    type: UserResponseDto,
+  })
+  @ApiErrorResponses(400, 401, 404, 409)
+  patchCurrentUser(
+    @CurrentUser() user: AuthUser,
+    @Body() body: PatchCurrentUserDto,
+  ): Promise<UserResponse> {
+    return this.users.patchCurrentUser(user, body);
   }
 }

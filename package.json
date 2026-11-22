@@ -14,7 +14,8 @@
     "format:check": "pnpm -r format:check",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "test:e2e": "pnpm -r test:e2e"
+    "test:e2e": "pnpm -r test:e2e",
+    "test:int": "pnpm -r test:int"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

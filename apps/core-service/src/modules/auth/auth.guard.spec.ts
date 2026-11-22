@@ -45,8 +45,11 @@ function userRow(id: string, role: 'user' | 'admin'): UserRecord {
   return {
     id,
     email: `${id}@example.com`,
+    name: null,
+    nickname: null,
     role,
     language: 'en',
+    units: 'kg',
     timeZone: 'Europe/Kyiv',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),

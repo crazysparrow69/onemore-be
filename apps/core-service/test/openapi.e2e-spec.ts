@@ -53,7 +53,7 @@ describe('openapi.json', () => {
     expect(put?.requestBody).toMatchObject({
       content: {
         'application/json': {
-          schema: { $ref: '#/components/schemas/UpdateMe' },
+          schema: { $ref: '#/components/schemas/UpdateCurrentUser' },
         },
       },
     });
@@ -61,6 +61,27 @@ describe('openapi.json', () => {
       '200',
       '400',
       '401',
+      '409',
+    ]);
+  });
+
+  it('documents PATCH /api/me with a bearer token and every response', () => {
+    const patch = document.paths['/api/me']?.patch;
+
+    expect(patch?.security).toEqual([{ bearer: [] }]);
+    expect(patch?.requestBody).toMatchObject({
+      content: {
+        'application/json': {
+          schema: { $ref: '#/components/schemas/PatchCurrentUser' },
+        },
+      },
+    });
+    expect(Object.keys(patch?.responses ?? {}).sort()).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+      '409',
     ]);
   });
 });
