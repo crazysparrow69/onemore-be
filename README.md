@@ -22,6 +22,7 @@ pnpm typecheck
 pnpm test
 pnpm test:e2e
 pnpm build
+pnpm openapi:generate   # rewrite apps/core-service/openapi.json from the Zod schemas
 ```
 
 Production-shaped start, after `pnpm build`:
@@ -80,10 +81,22 @@ packages/*          shared packages (added later)
 - `lint`: ESLint and Prettier
 - `typecheck`: `tsc --noEmit`
 - `test`: unit and e2e (Vitest)
+- `contracts`: `openapi.json` is up to date, and `oasdiff breaking` finds no breaking API change against `main`
 - `image`: builds the production image and smoke-tests `GET /health`
 - `ci-ok`: aggregates the jobs above; this is the only check the `main` ruleset should require
 
 All jobs run on every PR (no path filters), because a required check that never runs blocks the merge. Filtering by changed packages comes back when there is more than one service.
+
+## API contract
+
+`apps/core-service/openapi.json` describes the HTTP API and is generated from the Zod schemas (`nestjs-zod` + `@nestjs/swagger`). It is committed; the web repository copies types from it by hand for now.
+
+- Changed a schema, a controller or a route? Run `pnpm openapi:generate` and commit `openapi.json` in the same commit. The `contracts` CI job (and `pnpm test:e2e`) fails on a stale file.
+- Response bodies are Zod schemas too (`@ZodResponse` on the handler). The response is parsed by the schema, so a field that is not in it never reaches the client.
+- Error responses use one body, `ErrorResponse`; declare them with `@ApiErrorResponses(...)`.
+- The `contracts` job runs `oasdiff breaking` against `main` and fails on a breaking change (removed route or field, a new required field, a narrower type). Prefer a backward compatible change; the deploy order is service first, then web.
+- A deliberate breaking change: copy the line the job prints into `apps/core-service/openapi-breaking-ignore.txt` in the same pull request, and remove it in the next one. The file is empty by default.
+- Locally, `pnpm dev` serves Swagger UI at `/api/docs` (not in production).
 
 ## Configuration
 

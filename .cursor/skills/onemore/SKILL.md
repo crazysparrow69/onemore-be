@@ -72,7 +72,7 @@ Details: [reference/architecture.md](reference/architecture.md). Scope, roadmap,
 19. Run `node dist/main.js` directly (not `pnpm start`) and call `enableShutdownHooks()`. Dockerfile: multi-stage, `pnpm deploy --filter <svc> --prod`, `USER node`.
 
 **API**
-20. Public API changes only backward compatibly. Deploy order: service first, then web. `openapi.json` is generated from Zod and committed.
+20. Public API changes only backward compatibly. Deploy order: service first, then web. `openapi.json` is generated from Zod and committed: after changing a schema, controller or route run `pnpm openapi:generate` and commit it in the same commit. Responses use `@ZodResponse` with a Zod DTO; errors use `@ApiErrorResponses`.
 
 Rule details and rationale: [reference/data-and-db.md](reference/data-and-db.md), [reference/delivery.md](reference/delivery.md).
 

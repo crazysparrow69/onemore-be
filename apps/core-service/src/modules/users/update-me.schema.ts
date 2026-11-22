@@ -19,10 +19,12 @@ const timeZone = z
     { message: 'must be a valid IANA time zone' },
   );
 
-export const updateMeSchema = z.strictObject({
-  language: z.enum(LANGUAGES),
-  timeZone,
-});
+export const updateMeSchema = z
+  .strictObject({
+    language: z.enum(LANGUAGES),
+    timeZone,
+  })
+  .meta({ id: 'UpdateMe' });
 
 export class UpdateMeDto extends createZodDto(updateMeSchema) {}
 

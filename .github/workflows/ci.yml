@@ -56,6 +56,58 @@ jobs:
       - name: E2E tests
         run: pnpm test:e2e
 
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # `oasdiff` compares with `main`, so the history must be there.
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+
+      - name: Generate openapi.json
+        run: pnpm openapi:generate
+
+      - name: openapi.json is up to date
+        run: |
+          # `status`, not `diff`: it also catches a file that is not committed yet.
+          if [ -n "$(git status --porcelain -- apps/core-service/openapi.json)" ]; then
+            git diff -- apps/core-service/openapi.json || true
+            echo "::error::apps/core-service/openapi.json is stale. Run 'pnpm openapi:generate' and commit it."
+            exit 1
+          fi
+
+      # A pull request only: on `push` to `main` the same change was already
+      # checked on its pull request.
+      - name: No breaking API changes against main
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+        env:
+          # Pinned. Bump on purpose and read the release notes.
+          OASDIFF_IMAGE: tufin/oasdiff:v1.39.0
+        run: |
+          if ! git cat-file -e origin/main:apps/core-service/openapi.json 2>/dev/null; then
+            echo "::notice::main has no openapi.json yet, nothing to compare with."
+            exit 0
+          fi
+          git show origin/main:apps/core-service/openapi.json > "$RUNNER_TEMP/base.json"
+          cp apps/core-service/openapi.json "$RUNNER_TEMP/head.json"
+          ERR_IGNORE=()
+          if [ -s apps/core-service/openapi-breaking-ignore.txt ]; then
+            cp apps/core-service/openapi-breaking-ignore.txt "$RUNNER_TEMP/ignore.txt"
+            ERR_IGNORE=(--err-ignore /specs/ignore.txt)
+          fi
+          {
+            echo '### API changes against main'
+            echo '```'
+            docker run --rm -v "$RUNNER_TEMP:/specs:ro" "$OASDIFF_IMAGE" \
+              changelog /specs/base.json /specs/head.json || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          docker run --rm -v "$RUNNER_TEMP:/specs:ro" "$OASDIFF_IMAGE" \
+            breaking /specs/base.json /specs/head.json \
+            --fail-on ERR "${ERR_IGNORE[@]}"
+
   image:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -111,7 +163,7 @@ jobs:
   # skipped, which a plain required check would not.
   ci-ok:
     if: always()
-    needs: [lint, typecheck, test, image]
+    needs: [lint, typecheck, test, contracts, image]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

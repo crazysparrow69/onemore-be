@@ -6,6 +6,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "openapi:generate": "nest build && node dist/openapi/generate.js",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -20,6 +21,7 @@
     "@nestjs/config": "^12.1.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.4.8",
     "drizzle-orm": "^0.45.4",
     "jose": "^6.2.17",
     "nestjs-pino": "^5.3.1",

@@ -1,0 +1,66 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { Test } from '@nestjs/testing';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/app.setup';
+import { buildOpenApiDocument } from '../src/openapi/build-document';
+
+describe('openapi.json', () => {
+  let app: NestExpressApplication;
+  let document: ReturnType<typeof buildOpenApiDocument>;
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleRef.createNestApplication<NestExpressApplication>();
+    configureApp(app);
+    await app.init();
+    document = buildOpenApiDocument(app);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('is up to date (run `pnpm openapi:generate` and commit the result)', async () => {
+    const committed: unknown = JSON.parse(
+      await readFile(join(process.cwd(), 'openapi.json'), 'utf8'),
+    );
+
+    expect(JSON.parse(JSON.stringify(document))).toEqual(committed);
+  });
+
+  it('describes the public routes with the global /api prefix', () => {
+    expect(Object.keys(document.paths).sort()).toEqual([
+      '/api/me',
+      '/health',
+      '/health/ready',
+    ]);
+  });
+
+  it('requires a bearer token on /api/me but not on /health', () => {
+    expect(document.paths['/api/me']?.get?.security).toEqual([{ bearer: [] }]);
+    expect(document.paths['/api/me']?.put?.security).toEqual([{ bearer: [] }]);
+    expect(document.paths['/health']?.get?.security).toBeUndefined();
+  });
+
+  it('documents the request body and every response of PUT /api/me', () => {
+    const put = document.paths['/api/me']?.put;
+
+    expect(put?.requestBody).toMatchObject({
+      content: {
+        'application/json': {
+          schema: { $ref: '#/components/schemas/UpdateMe' },
+        },
+      },
+    });
+    expect(Object.keys(put?.responses ?? {}).sort()).toEqual([
+      '200',
+      '400',
+      '401',
+    ]);
+  });
+});
