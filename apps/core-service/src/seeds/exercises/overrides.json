@@ -1,0 +1,41 @@
+{
+  "Backward_Drag": {
+    "type": "weight_distance"
+  },
+  "Bear_Crawl_Sled_Drags": {
+    "type": "weight_distance"
+  },
+  "Farmers_Walk": {
+    "type": "weight_distance"
+  },
+  "Forward_Drag_with_Press": {
+    "type": "weight_distance"
+  },
+  "Prowler_Sprint": {
+    "type": "weight_distance"
+  },
+  "Rickshaw_Carry": {
+    "type": "weight_distance"
+  },
+  "Rope_Jumping": {
+    "type": "duration"
+  },
+  "Sled_Drag_-_Harness": {
+    "type": "weight_distance"
+  },
+  "Sled_Overhead_Backward_Walk": {
+    "type": "weight_distance"
+  },
+  "Sled_Push": {
+    "type": "weight_distance"
+  },
+  "Stairmaster": {
+    "type": "duration"
+  },
+  "Step_Mill": {
+    "type": "duration"
+  },
+  "Yoke_Walk": {
+    "type": "weight_distance"
+  }
+}

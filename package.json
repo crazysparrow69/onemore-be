@@ -10,6 +10,7 @@
     "build": "pnpm -r build",
     "openapi:generate": "pnpm --filter core-service openapi:generate",
     "dev": "pnpm --filter core-service dev",
+    "seed": "pnpm --filter core-service seed",
     "lint": "pnpm -r lint",
     "format:check": "pnpm -r format:check",
     "typecheck": "pnpm -r typecheck",

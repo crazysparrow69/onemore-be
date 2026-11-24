@@ -34,6 +34,17 @@ NODE_ENV=production node apps/core-service/dist/main.js
 `GET /health` returns `{ "status": "ok", "version": "<APP_VERSION>" }` and does not touch a database.
 `GET /health/ready` does the same after a `SELECT 1`, and answers 503 if the database is unreachable. It wakes Neon, so use it by hand or in smoke checks, never on a schedule.
 
+## Exercise catalog
+
+The system exercises come from a snapshot of [free-exercise-db](https://github.com/yuhonas/free-exercise-db) (commit `f00c92c`) in `apps/core-service/src/seeds/exercises/`:
+
+- `free-exercise-db.json`: the upstream `dist/exercises.json`, unchanged
+- `overrides.json`: our corrections by source id (`type`, `equipment`, `primaryMuscles`, `secondaryMuscles`, `skip`)
+
+`pnpm seed` builds the service and writes the catalog into `core.exercises` and `core.exercise_translations`. It reads `DATABASE_URL` from the environment or `apps/core-service/.env`, needs the migrations applied first, and runs in one transaction. Rows are upserted by `(source, source_id)` and only changed rows are written, so running it again creates no duplicates. Exercises removed from the seed are left as they are. It is not part of the deploy: run it by hand against the target database after the data changes, for example `DATABASE_URL=... node apps/core-service/dist/seed.js` after `pnpm build`.
+
+The photos live in the web repository (`public/exercises/<source_id in lowercase>/<n>.webp`); the database stores only their keys.
+
 ## Git hooks
 
 `pnpm install` turns the hooks on (husky). They run locally; CI still runs the same checks plus the image build.

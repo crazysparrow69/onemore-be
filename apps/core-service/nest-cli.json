@@ -8,6 +8,10 @@
       {
         "include": "db/migrations/**/*",
         "outDir": "dist"
+      },
+      {
+        "include": "seeds/**/*.json",
+        "outDir": "dist"
       }
     ]
   }

@@ -62,13 +62,13 @@ describe('core schema, role and migrations (real Postgres)', () => {
       runMigrations(coreUrl, migrationsFolder),
     ]);
 
-    expect(await appliedMigrations()).toBe(4);
+    expect(await appliedMigrations()).toBe(5);
   });
 
   it('is idempotent: running again changes nothing', async () => {
     await runMigrations(coreUrl, migrationsFolder);
 
-    expect(await appliedMigrations()).toBe(4);
+    expect(await appliedMigrations()).toBe(5);
   });
 
   it('drops the unused core.accounts table', async () => {
@@ -168,6 +168,112 @@ describe('core schema, role and migrations (real Postgres)', () => {
        values ('user-n3', 'n3@example.com', 'en', 'Europe/Kyiv'),
               ('user-n4', 'n4@example.com', 'en', 'Europe/Kyiv')`,
     );
+  });
+
+  it('exercises enforce source, owner, muscles and slugs', async () => {
+    const insert = (columns: string, values: string) =>
+      core.query(
+        `insert into core.exercises (id, ${columns}) values (gen_random_uuid(), ${values})`,
+      );
+    const system = `source, source_id, visibility, type, primary_muscles, secondary_muscles, equipment`;
+
+    await insert(
+      system,
+      `'free-exercise-db', 'Ok', 'public', 'weight_reps', array['chest'], array['triceps'], 'barbell'`,
+    );
+
+    await expect(
+      insert(
+        system,
+        `'free-exercise-db', 'Ok', 'public', 'weight_reps', array['chest'], array[]::text[], 'barbell'`,
+      ),
+    ).rejects.toThrow(/exercises_source_source_id_unique/);
+    await expect(
+      insert(
+        system,
+        `'free-exercise-db', 'Wing', 'public', 'weight_reps', array['wings'], array[]::text[], 'none'`,
+      ),
+    ).rejects.toThrow(/exercises_primary_muscles_check/);
+    await expect(
+      insert(
+        system,
+        `'free-exercise-db', 'Empty', 'public', 'weight_reps', array[]::text[], array[]::text[], 'none'`,
+      ),
+    ).rejects.toThrow(/exercises_primary_muscles_check/);
+    await expect(
+      insert(
+        system,
+        `'free-exercise-db', 'Overlap', 'public', 'weight_reps', array['chest'], array['chest'], 'none'`,
+      ),
+    ).rejects.toThrow(/exercises_secondary_muscles_check/);
+    await expect(
+      insert(
+        system,
+        `'free-exercise-db', 'CardioSecondary', 'public', 'duration', array['chest'], array['cardio'], 'none'`,
+      ),
+    ).rejects.toThrow(/exercises_secondary_muscles_check/);
+    await expect(
+      insert(
+        system,
+        `'free-exercise-db', 'Rocket', 'public', 'weight_reps', array['chest'], array[]::text[], 'rocket'`,
+      ),
+    ).rejects.toThrow(/exercises_equipment_check/);
+    await expect(
+      insert(
+        system,
+        `'free-exercise-db', 'Swim', 'public', 'swimming', array['chest'], array[]::text[], 'none'`,
+      ),
+    ).rejects.toThrow(/exercises_type_check/);
+    await expect(
+      insert(
+        system,
+        `'free-exercise-db', 'Hidden', 'private', 'weight_reps', array['chest'], array[]::text[], 'none'`,
+      ),
+    ).rejects.toThrow(/exercises_owner_check/);
+
+    await core.query(
+      `insert into core.users (id, email, language, time_zone)
+       values ('user-e1', 'e1@example.com', 'en', 'Europe/Kyiv')`,
+    );
+    await insert(
+      `owner_id, ${system}`,
+      `'user-e1', 'user', null, 'private', 'duration', array['other'], array[]::text[], 'none'`,
+    );
+    await expect(
+      insert(
+        `owner_id, ${system}`,
+        `'user-e1', 'free-exercise-db', 'Mine', 'private', 'duration', array['other'], array[]::text[], 'none'`,
+      ),
+    ).rejects.toThrow(/exercises_owner_check/);
+  });
+
+  it('exercise translations accept only known locales and go with the exercise', async () => {
+    const created = await core.query<{ id: string }>(
+      `insert into core.exercises (id, source, source_id, visibility, type, primary_muscles)
+       values (gen_random_uuid(), 'onemore', 'Burpee', 'public', 'bodyweight_reps', array['full_body'])
+       returning id`,
+    );
+    const id = created.rows[0].id;
+
+    await core.query(
+      `insert into core.exercise_translations (exercise_id, locale, name)
+       values ($1, 'en', 'Burpee'), ($1, 'uk', 'Берпі')`,
+      [id],
+    );
+    await expect(
+      core.query(
+        `insert into core.exercise_translations (exercise_id, locale, name)
+         values ($1, 'de', 'Burpee')`,
+        [id],
+      ),
+    ).rejects.toThrow(/exercise_translations_locale_check/);
+
+    await core.query('delete from core.exercises where id = $1', [id]);
+    const left = await core.query<{ n: number }>(
+      'select count(*)::int as n from core.exercise_translations where exercise_id = $1',
+      [id],
+    );
+    expect(left.rows[0].n).toBe(0);
   });
 
   it('core_svc cannot create anything outside its own schema', async () => {

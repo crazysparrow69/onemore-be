@@ -9,6 +9,7 @@
     "openapi:generate": "nest build && node dist/openapi/generate.js",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
+    "seed": "nest build && node --env-file-if-exists=.env dist/seed.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,test}/**/*.ts\"",
