@@ -11,6 +11,7 @@
     "openapi:generate": "pnpm --filter core-service openapi:generate",
     "dev": "pnpm --filter core-service dev",
     "seed": "pnpm --filter core-service seed",
+    "seed:translations": "pnpm --filter core-service seed:translations",
     "lint": "pnpm -r lint",
     "format:check": "pnpm -r format:check",
     "typecheck": "pnpm -r typecheck",

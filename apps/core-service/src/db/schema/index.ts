@@ -8,7 +8,6 @@ export {
   EXERCISE_MECHANICS,
   EXERCISE_SOURCES,
   EXERCISE_TYPES,
-  LOCALES,
   MUSCLES,
   PRIMARY_MUSCLES,
   PRIMARY_ONLY_GROUPS,
@@ -24,9 +23,10 @@ export type {
   ExerciseMechanic,
   ExerciseSource,
   ExerciseType,
-  Locale,
   Muscle,
   PrimaryMuscle,
   PrimaryOnlyGroup,
   Visibility,
 } from './exercises';
+export { LOCALES } from './locales';
+export type { Locale } from './locales';

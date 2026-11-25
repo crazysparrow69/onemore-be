@@ -8,6 +8,7 @@ import {
   unique,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { LOCALES, type Locale } from './locales';
 import { coreSchema, users } from './users';
 
 export const EXERCISE_TYPES = [
@@ -95,9 +96,6 @@ export type ExerciseSource = (typeof EXERCISE_SOURCES)[number];
 
 export const VISIBILITIES = ['private', 'link', 'public'] as const;
 export type Visibility = (typeof VISIBILITIES)[number];
-
-export const LOCALES = ['en', 'uk'] as const;
-export type Locale = (typeof LOCALES)[number];
 
 function oneOf(column: string, values: readonly string[]): SQL {
   return sql.raw(

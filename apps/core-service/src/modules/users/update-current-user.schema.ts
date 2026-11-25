@@ -1,8 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { LOCALES } from '../../db/schema/locales';
 import { UNITS } from '../../db/schema/users';
-
-export const LANGUAGES = ['en', 'uk'] as const;
 
 export const timeZone = z
   .string()
@@ -22,7 +21,7 @@ export const timeZone = z
 
 export const updateCurrentUserSchema = z
   .strictObject({
-    language: z.enum(LANGUAGES),
+    language: z.enum(LOCALES),
     timeZone,
     units: z.enum(UNITS).optional(),
   })

@@ -1,41 +1,1030 @@
 {
+  "Alternating_Hang_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "biceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "traps"
+    ]
+  },
+  "Anterior_Tibialis-SMR": {
+    "equipment": "none"
+  },
+  "Atlas_Stone_Trainer": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "lower_back",
+      "biceps",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "quadriceps"
+    ]
+  },
+  "Atlas_Stones": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "lower_back",
+      "abdominals",
+      "adductors",
+      "biceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "upper_back",
+      "quadriceps",
+      "traps"
+    ]
+  },
   "Backward_Drag": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back"
+    ]
+  },
+  "Balance_Board": {
+    "equipment": "none"
+  },
+  "Band_Assisted_Pull-Up": {
+    "type": "bodyweight_reps",
+    "equipment": "band"
+  },
+  "Battling_Ropes": {
+    "type": "duration"
   },
   "Bear_Crawl_Sled_Drags": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["quadriceps", "calves", "glutes", "hamstrings"]
+  },
+  "Behind_Head_Chest_Stretch": {
+    "equipment": "none"
+  },
+  "Bench_Sprint": {
+    "type": "duration",
+    "equipment": "none"
+  },
+  "Bodyweight_Mid_Row": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Box_Jump_Multiple_Response": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Box_Skip": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Chain_Handle_Extension": {
+    "equipment": "cable"
+  },
+  "Chain_Press": {
+    "equipment": "barbell"
+  },
+  "Chair_Leg_Extended_Stretch": {
+    "equipment": "none"
+  },
+  "Chair_Upper_Body_Stretch": {
+    "equipment": "none"
+  },
+  "Chest_And_Front_Of_Shoulder_Stretch": {
+    "equipment": "none"
+  },
+  "Circus_Bell": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "shoulders",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Clean_and_Jerk": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "shoulders",
+      "abdominals",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "quadriceps",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Clean_and_Press": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "shoulders",
+      "abdominals",
+      "calves",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "upper_back",
+      "quadriceps",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Clean_from_Blocks": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "glutes",
+      "hamstrings",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Conans_Wheel": {
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "abdominals",
+      "biceps",
+      "calves",
+      "forearms",
+      "lower_back",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Crucifix": {
+    "equipment": "none"
+  },
+  "Decline_Smith_Press": {
+    "equipment": "smith_machine"
+  },
+  "Depth_Jump_Leap": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Dips_-_Chest_Version": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Donkey_Calf_Raises": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Double_Kettlebell_Alternating_Hang_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "biceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "traps"
+    ]
+  },
+  "Double_Kettlebell_Snatch": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["shoulders", "glutes", "hamstrings", "quadriceps"]
+  },
+  "Drop_Push": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Dumbbell_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Elliptical_Trainer": {
+    "type": "duration"
   },
   "Farmers_Walk": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "forearms",
+      "abdominals",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "quadriceps",
+      "traps"
+    ]
+  },
+  "Foot-SMR": {
+    "equipment": "none"
   },
   "Forward_Drag_with_Press": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "chest",
+      "calves",
+      "glutes",
+      "hamstrings",
+      "quadriceps",
+      "shoulders",
+      "triceps"
+    ]
+  },
+  "Front_Box_Jump": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Front_Cone_Hops_or_hurdle_hops": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Front_Plate_Raise": {
+    "equipment": "plate"
+  },
+  "Gironda_Sternum_Chins": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Hang_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Hang_Clean_-_Below_the_Knees": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Hang_Snatch": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "abdominals",
+      "calves",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Hang_Snatch_-_Below_Knees": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "abdominals",
+      "calves",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Heavy_Bag_Thrust": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Hurdle_Hops": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Hyperextensions_Back_Extensions": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "IT_Band_and_Glute_Stretch": {
+    "equipment": "none"
+  },
+  "Incline_Push-Up_Depth_Jump": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Intermediate_Groin_Stretch": {
+    "equipment": "none"
+  },
+  "Intermediate_Hip_Flexor_and_Quad_Stretch": {
+    "equipment": "none"
+  },
+  "Inverted_Row_with_Straps": {
+    "type": "bodyweight_reps",
+    "equipment": "suspension"
+  },
+  "Keg_Load": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "lower_back",
+      "abdominals",
+      "biceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "upper_back",
+      "quadriceps",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Kettlebell_Dead_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "traps"
+    ]
+  },
+  "Kettlebell_Hang_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "glutes",
+      "lower_back",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Kettlebell_Thruster": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["shoulders", "quadriceps", "triceps"]
+  },
+  "Kettlebell_Turkish_Get-Up_Lunge_style": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "shoulders",
+      "abdominals",
+      "hamstrings",
+      "quadriceps",
+      "triceps"
+    ]
+  },
+  "Kettlebell_Turkish_Get-Up_Squat_style": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "shoulders",
+      "abdominals",
+      "calves",
+      "hamstrings",
+      "quadriceps",
+      "triceps"
+    ]
+  },
+  "Kipping_Muscle_Up": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Knee_Hip_Raise_On_Parallel_Bars": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Lateral_Box_Jump": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Lateral_Cone_Hops": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Linear_Depth_Jump": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Log_Lift": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "shoulders",
+      "abdominals",
+      "chest",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "upper_back",
+      "quadriceps",
+      "traps",
+      "triceps"
+    ]
+  },
+  "London_Bridges": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Lying_Bent_Leg_Groin": {
+    "equipment": "none"
+  },
+  "Lying_Face_Down_Plate_Neck_Resistance": {
+    "equipment": "plate"
+  },
+  "Lying_Face_Up_Plate_Neck_Resistance": {
+    "equipment": "plate"
+  },
+  "Lying_Hamstring": {
+    "equipment": "none"
+  },
+  "Mixed_Grip_Chin": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Mountain_Climbers": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["quadriceps", "chest", "hamstrings", "shoulders"]
+  },
+  "Muscle_Snatch": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "triceps"
+    ]
+  },
+  "Muscle_Up": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Neck-SMR": {
+    "equipment": "none"
+  },
+  "On-Your-Back_Quad_Stretch": {
+    "equipment": "none"
+  },
+  "One-Arm_Kettlebell_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "glutes",
+      "lower_back",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "One-Arm_Kettlebell_Clean_and_Jerk": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["shoulders"]
+  },
+  "One-Arm_Kettlebell_Snatch": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "shoulders",
+      "calves",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "traps",
+      "triceps"
+    ]
+  },
+  "One-Arm_Kettlebell_Split_Snatch": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["shoulders", "hamstrings", "quadriceps"]
+  },
+  "One-Arm_Kettlebell_Swings": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "glutes",
+      "lower_back",
+      "shoulders"
+    ]
+  },
+  "One-Arm_Open_Palm_Kettlebell_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders"
+    ]
+  },
+  "One_Arm_Chin-Up": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "One_Handed_Hang": {
+    "equipment": "none"
+  },
+  "Open_Palm_Kettlebell_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders"
+    ]
+  },
+  "Otis-Up": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Overhead_Lat": {
+    "equipment": "none"
+  },
+  "Parallel_Bar_Dip": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Peroneals_Stretch": {
+    "equipment": "none"
+  },
+  "Plate_Pinch": {
+    "equipment": "plate"
+  },
+  "Plate_Twist": {
+    "equipment": "plate"
+  },
+  "Platform_Hamstring_Slides": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Posterior_Tibialis_Stretch": {
+    "equipment": "none"
+  },
+  "Power_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "upper_back",
+      "quadriceps",
+      "shoulders",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Power_Clean_from_Blocks": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["hamstrings", "quadriceps"]
+  },
+  "Power_Snatch": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Power_Snatch_from_Blocks": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "shoulders",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Power_Stairs": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "adductors",
+      "calves",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "traps"
+    ]
   },
   "Prowler_Sprint": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "chest",
+      "glutes",
+      "quadriceps",
+      "shoulders"
+    ]
+  },
+  "Quad_Stretch": {
+    "equipment": "none"
+  },
+  "Quick_Leap": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Reverse_Plate_Curls": {
+    "equipment": "plate"
   },
   "Rickshaw_Carry": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "forearms",
+      "abdominals",
+      "calves",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "quadriceps",
+      "traps"
+    ]
+  },
+  "Ring_Dips": {
+    "type": "bodyweight_reps",
+    "equipment": "suspension"
+  },
+  "Rocky_Pull-Ups_Pulldowns": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Rope_Climb": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
   },
   "Rope_Jumping": {
     "type": "duration"
   },
+  "Round_The_World_Shoulder_Stretch": {
+    "equipment": "none"
+  },
+  "Sandbag_Load": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "abdominals",
+      "biceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "upper_back",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Seated_Band_Hamstring_Curl": {
+    "equipment": "band"
+  },
+  "Seated_Hamstring_and_Calf_Stretch": {
+    "equipment": "none"
+  },
+  "Side_Hop-Sprint": {
+    "type": "duration",
+    "equipment": "none"
+  },
+  "Side_To_Side_Chins": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Side_to_Side_Box_Shuffle": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Single-Cone_Sprint_Drill": {
+    "type": "duration",
+    "equipment": "none"
+  },
+  "Single-Leg_High_Box_Squat": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Single-Leg_Hop_Progression": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Single-Leg_Lateral_Hop": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Single-Leg_Stride_Jump": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Single_Leg_Push-off": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
   "Sled_Drag_-_Harness": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["quadriceps", "calves", "glutes", "hamstrings"]
   },
   "Sled_Overhead_Backward_Walk": {
     "type": "weight_distance"
   },
   "Sled_Push": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "chest",
+      "glutes",
+      "hamstrings",
+      "triceps"
+    ]
+  },
+  "Smith_Machine_Behind_the_Back_Shrug": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Bench_Press": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Bent_Over_Row": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Calf_Raise": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Close-Grip_Bench_Press": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Decline_Press": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Hang_Power_Clean": {
+    "equipment": "smith_machine",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Smith_Machine_Hip_Raise": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Incline_Bench_Press": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Leg_Press": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_One-Arm_Upright_Row": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Overhead_Shoulder_Press": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Pistol_Squat": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Reverse_Calf_Raises": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Squat": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Stiff-Legged_Deadlift": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Machine_Upright_Row": {
+    "equipment": "smith_machine"
+  },
+  "Smith_Single-Leg_Split_Squat": {
+    "equipment": "smith_machine"
+  },
+  "Snatch": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "biceps",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "shoulders",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Snatch_from_Blocks": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "shoulders",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Split_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "shoulders",
+      "traps"
+    ]
+  },
+  "Split_Snatch": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "hamstrings",
+      "calves",
+      "forearms",
+      "glutes",
+      "lower_back",
+      "quadriceps",
+      "shoulders",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Squat_Jerk": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "glutes",
+      "hamstrings",
+      "shoulders",
+      "triceps"
+    ]
   },
   "Stairmaster": {
     "type": "duration"
   },
+  "Standing_Biceps_Stretch": {
+    "equipment": "none"
+  },
+  "Standing_Elevated_Quad_Stretch": {
+    "equipment": "none"
+  },
+  "Standing_Hamstring_and_Calf_Stretch": {
+    "equipment": "none"
+  },
+  "Standing_Olympic_Plate_Hand_Squeeze": {
+    "equipment": "plate"
+  },
   "Step_Mill": {
     "type": "duration"
   },
+  "Stride_Jump_Crossover": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Suspended_Fallout": {
+    "type": "bodyweight_reps",
+    "equipment": "suspension"
+  },
+  "Suspended_Push-Up": {
+    "type": "bodyweight_reps",
+    "equipment": "suspension"
+  },
+  "Suspended_Reverse_Crunch": {
+    "type": "bodyweight_reps",
+    "equipment": "suspension"
+  },
+  "Suspended_Row": {
+    "type": "bodyweight_reps",
+    "equipment": "suspension"
+  },
+  "Suspended_Split_Squat": {
+    "type": "bodyweight_reps",
+    "equipment": "suspension"
+  },
+  "Svend_Press": {
+    "equipment": "plate"
+  },
+  "Tire_Flip": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "calves",
+      "chest",
+      "forearms",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "shoulders",
+      "traps",
+      "triceps"
+    ]
+  },
+  "Trap_Bar_Deadlift": {
+    "equipment": "trap_bar"
+  },
+  "Two-Arm_Kettlebell_Clean": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "shoulders",
+      "calves",
+      "glutes",
+      "hamstrings",
+      "lower_back",
+      "traps"
+    ]
+  },
+  "Vertical_Swing": {
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": ["hamstrings", "glutes", "quadriceps", "shoulders"]
+  },
+  "Weighted_Bench_Dip": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Weighted_Pull_Ups": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
+  "Weighted_Sit-Ups_-_With_Bands": {
+    "type": "bodyweight_reps",
+    "equipment": "band"
+  },
+  "Weighted_Squat": {
+    "type": "bodyweight_reps",
+    "equipment": "none"
+  },
   "Yoke_Walk": {
-    "type": "weight_distance"
+    "type": "weight_distance",
+    "primaryMuscles": ["full_body"],
+    "secondaryMuscles": [
+      "quadriceps",
+      "abdominals",
+      "abductors",
+      "adductors",
+      "calves",
+      "glutes",
+      "hamstrings",
+      "lower_back"
+    ]
   }
 }

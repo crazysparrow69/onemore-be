@@ -10,6 +10,7 @@
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "seed": "nest build && node --env-file-if-exists=.env dist/seed.js",
+    "seed:translations": "nest build && node --env-file-if-exists=.env dist/seed-translations.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,test}/**/*.ts\"",

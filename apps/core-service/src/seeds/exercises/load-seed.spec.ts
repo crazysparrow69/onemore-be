@@ -26,6 +26,14 @@ describe('exercise seed data', () => {
       if (override.type) {
         expect(exercise?.type, sourceId).toBe(override.type);
       }
+      if (override.equipment) {
+        expect(exercise?.equipment, sourceId).toBe(override.equipment);
+      }
+      if (override.primaryMuscles) {
+        expect(exercise?.primaryMuscles, sourceId).toEqual(
+          override.primaryMuscles,
+        );
+      }
     }
   });
 

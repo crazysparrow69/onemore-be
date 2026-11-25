@@ -1,7 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { LOCALES } from '../../db/schema/locales';
 import { UNITS } from '../../db/schema/users';
-import { LANGUAGES, timeZone } from './update-current-user.schema';
+import { timeZone } from './update-current-user.schema';
 
 export const NICKNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
@@ -26,7 +27,7 @@ export const patchCurrentUserSchema = z
   .strictObject({
     name: name.optional(),
     nickname: nickname.optional(),
-    language: z.enum(LANGUAGES).optional(),
+    language: z.enum(LOCALES).optional(),
     units: z.enum(UNITS).optional(),
     timeZone: timeZone.optional(),
   })

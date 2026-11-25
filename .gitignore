@@ -2,6 +2,9 @@
 specs/
 .planning/
 
+# One-off exercise translations, written to the database by seed:translations
+apps/core-service/translations/
+
 # Node / build
 node_modules/
 dist/

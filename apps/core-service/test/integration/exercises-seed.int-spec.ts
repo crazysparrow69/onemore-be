@@ -8,6 +8,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { runMigrations } from '../../src/db/migrator';
 import { runExerciseSeed } from '../../src/seeds/exercises/import-exercises';
 import { loadSeed } from '../../src/seeds/exercises/load-seed';
+import { runTranslationSeed } from '../../src/seeds/translations/import-translations';
+import { buildTranslations } from '../../src/seeds/translations/load-translations';
 import type { SeedExercise } from '../../src/seeds/exercises/map-exercise';
 
 const repoRoot = join(process.cwd(), '..', '..');
@@ -124,7 +126,7 @@ describe('exercise seed (real Postgres)', () => {
         owner_id: null,
         visibility: 'public',
         type: 'weight_distance',
-        primary_muscles: ['forearms'],
+        primary_muscles: ['full_body'],
         equipment: 'other',
         image_keys: [
           'exercises/farmers_walk/0.webp',
@@ -193,5 +195,95 @@ describe('exercise seed (real Postgres)', () => {
     expect(result.rows[0].n).toBe(
       seed.filter((exercise) => exercise.level === 'expert').length,
     );
+  });
+  describe('translations', () => {
+    const uk = Object.fromEntries(
+      seed.map((exercise) => [
+        exercise.sourceId,
+        {
+          name: `Укр ${exercise.name}`,
+          instructions: exercise.instructions.map((step) => `Укр ${step}`),
+          aliases: ['синонім'],
+        },
+      ]),
+    );
+    const en = { Pushups: { aliases: ['press up'] } };
+    const rows = buildTranslations({ uk, en }, seed);
+
+    async function translationCounts() {
+      const result = await core.query<{ locale: string; n: number }>(
+        'select locale, count(*)::int as n from core.exercise_translations group by locale order by locale',
+      );
+      return result.rows;
+    }
+
+    it('first run adds every Ukrainian row and English aliases', async () => {
+      await runExerciseSeed(coreUrl, seed);
+
+      const summary = await runTranslationSeed(coreUrl, rows);
+
+      expect(summary).toEqual({
+        total: 877,
+        inserted: 876,
+        updated: 1,
+        unchanged: 0,
+      });
+      expect(await translationCounts()).toEqual([
+        { locale: 'en', n: 876 },
+        { locale: 'uk', n: 876 },
+      ]);
+    });
+
+    it('second run changes nothing', async () => {
+      const before = await snapshot();
+
+      const summary = await runTranslationSeed(coreUrl, rows);
+
+      expect(summary).toEqual({
+        total: 877,
+        inserted: 0,
+        updated: 0,
+        unchanged: 877,
+      });
+      expect(await snapshot()).toEqual(before);
+    });
+
+    it('keeps translations when the exercise seed runs again', async () => {
+      const summary = await runExerciseSeed(coreUrl, seed);
+
+      expect(summary.updated).toBe(0);
+      const result = await core.query<{ aliases: string[] }>(
+        `select t.aliases from core.exercise_translations t
+         join core.exercises e on e.id = t.exercise_id
+         where e.source_id = 'Pushups' and t.locale = 'en'`,
+      );
+      expect(result.rows[0].aliases).toEqual(['press up']);
+    });
+
+    it('updates exactly the exercise whose alias changed', async () => {
+      const changed = buildTranslations(
+        {
+          uk: {
+            ...uk,
+            Pushups: { ...uk.Pushups, aliases: ['віджимання від підлоги'] },
+          },
+          en,
+        },
+        seed,
+      );
+
+      const summary = await runTranslationSeed(coreUrl, changed);
+
+      expect(summary.updated).toBe(1);
+      expect(summary.inserted).toBe(0);
+    });
+
+    it('fails when the English row is missing', async () => {
+      await core.query('delete from core.exercise_translations');
+
+      await expect(runTranslationSeed(coreUrl, rows)).rejects.toThrow(
+        /run the exercise seed first/,
+      );
+    });
   });
 });

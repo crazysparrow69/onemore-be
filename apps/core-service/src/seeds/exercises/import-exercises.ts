@@ -1,8 +1,7 @@
 import { inArray, sql } from 'drizzle-orm';
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { exercises, exerciseTranslations } from '../../db/schema';
-import { toDirectUrl } from '../../db/migrator';
+import { withSeedTransaction } from '../seed-transaction';
 import type { SeedExercise } from './map-exercise';
 
 const SEED_LOCK_KEY = 7_251_002;
@@ -21,25 +20,9 @@ export async function runExerciseSeed(
   connectionString: string,
   seed: SeedExercise[],
 ): Promise<SeedSummary> {
-  const pool = new Pool({ connectionString: toDirectUrl(connectionString) });
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    try {
-      await client.query("SET LOCAL lock_timeout = '30s'");
-      await client.query("SET LOCAL statement_timeout = '60s'");
-      await client.query('SELECT pg_advisory_xact_lock($1)', [SEED_LOCK_KEY]);
-      const summary = await importExercises(drizzle(client), seed);
-      await client.query('COMMIT');
-      return summary;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    }
-  } finally {
-    client.release();
-    await pool.end();
-  }
+  return withSeedTransaction(connectionString, SEED_LOCK_KEY, (db) =>
+    importExercises(db, seed),
+  );
 }
 
 export async function importExercises(
