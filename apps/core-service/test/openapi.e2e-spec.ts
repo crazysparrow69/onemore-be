@@ -35,6 +35,9 @@ describe('openapi.json', () => {
 
   it('describes the public routes with the global /api prefix', () => {
     expect(Object.keys(document.paths).sort()).toEqual([
+      '/api/exercise-dictionaries',
+      '/api/exercises',
+      '/api/exercises/{id}',
       '/api/me',
       '/health',
       '/health/ready',
@@ -63,6 +66,46 @@ describe('openapi.json', () => {
       '401',
       '409',
     ]);
+  });
+
+  it('requires a bearer token on every catalog route', () => {
+    for (const path of [
+      '/api/exercises',
+      '/api/exercises/{id}',
+      '/api/exercise-dictionaries',
+    ]) {
+      expect(document.paths[path]?.get?.security).toEqual([{ bearer: [] }]);
+    }
+  });
+
+  it('documents the catalog search parameters and every response', () => {
+    const list = document.paths['/api/exercises']?.get;
+    const parameters = (list?.parameters ?? []).map((parameter) =>
+      'name' in parameter ? parameter.name : parameter.$ref,
+    );
+
+    expect(parameters.sort()).toEqual([
+      'equipment',
+      'limit',
+      'muscle',
+      'offset',
+      'q',
+    ]);
+    expect(Object.keys(list?.responses ?? {}).sort()).toEqual([
+      '200',
+      '400',
+      '401',
+    ]);
+    expect(
+      Object.keys(
+        document.paths['/api/exercises/{id}']?.get?.responses ?? {},
+      ).sort(),
+    ).toEqual(['200', '400', '401', '404']);
+    expect(
+      Object.keys(
+        document.paths['/api/exercise-dictionaries']?.get?.responses ?? {},
+      ).sort(),
+    ).toEqual(['200', '401']);
   });
 
   it('documents PATCH /api/me with a bearer token and every response', () => {

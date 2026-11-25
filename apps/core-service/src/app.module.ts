@@ -9,6 +9,7 @@ import { DatabaseModule } from './db/database.module';
 import { HealthModule } from './health/health.module';
 import { createPinoHttpOptions } from './logger/pino-options';
 import { AuthModule } from './modules/auth/auth.module';
+import { ExercisesModule } from './modules/exercises/exercises.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -30,6 +31,7 @@ import { UsersModule } from './modules/users/users.module';
     DatabaseModule,
     HealthModule,
     UsersModule,
+    ExercisesModule,
     AuthModule,
   ],
   providers: [
