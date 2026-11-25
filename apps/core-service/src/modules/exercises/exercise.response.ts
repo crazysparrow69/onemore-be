@@ -19,6 +19,7 @@ const listItemFields = {
   secondaryMuscles: z.array(z.enum(MUSCLES)),
   equipment: z.enum(EQUIPMENT),
   image: z.string().nullable(),
+  custom: z.boolean(),
 };
 
 export const exerciseListItemSchema = z

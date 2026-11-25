@@ -7,7 +7,7 @@ const DESCRIPTIONS: Readonly<Record<number, string>> = {
   401: 'Missing or invalid access token',
   403: 'Not allowed',
   404: 'Not found',
-  409: 'Conflict: the value is already used (for example EMAIL_TAKEN, NICKNAME_TAKEN)',
+  409: 'Conflict: the value is already used or a limit is reached (for example NICKNAME_TAKEN, EXERCISE_LIMIT_REACHED)',
   503: 'Dependency unavailable',
 };
 

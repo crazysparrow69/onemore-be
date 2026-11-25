@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { sql, type SQL } from 'drizzle-orm';
+import { and, eq, isNull, sql, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { DB } from '../../db/database.constants';
 import type { Database } from '../../db/database.module';
@@ -10,12 +10,15 @@ import {
   EXERCISE_LEVELS,
   EXERCISE_MECHANICS,
   EXERCISE_TYPES,
+  exercises,
+  exerciseTranslations,
   MUSCLES,
   PRIMARY_MUSCLES,
   type Equipment,
   type PrimaryMuscle,
 } from '../../db/schema/exercises';
 import type { Locale } from '../../db/schema/locales';
+import type { ExerciseInput } from './exercise-input.schema';
 import { TRANSLATE_FROM, TRANSLATE_TO } from './exercise-text';
 import type { SearchPlan, SearchWord } from './exercise-search';
 
@@ -29,6 +32,7 @@ export type ExerciseSearch = {
   plan: SearchPlan;
   muscles: readonly PrimaryMuscle[];
   equipment: readonly Equipment[];
+  mine: boolean;
   limit: number;
   offset: number;
 };
@@ -41,6 +45,7 @@ const baseRow = {
   secondary_muscles: z.array(z.enum(MUSCLES)),
   equipment: z.enum(EQUIPMENT),
   image_keys: z.array(z.string()),
+  custom: z.boolean(),
 };
 
 const listRowSchema = z.object({
@@ -56,6 +61,19 @@ const detailsRowSchema = z.object({
   level: z.enum(EXERCISE_LEVELS).nullable(),
   instructions: z.array(z.string()),
 });
+
+export type NewExercise = {
+  id: string;
+  userId: string;
+  locale: Locale;
+  input: ExerciseInput;
+  limit: number;
+};
+
+export type ExerciseOwnership = {
+  ownerId: string | null;
+  archivedAt: Date | null;
+};
 
 export type ExerciseListRow = z.infer<typeof listRowSchema>;
 export type ExerciseDetailsRow = z.infer<typeof detailsRowSchema>;
@@ -150,6 +168,9 @@ function tagHitsOf(plan: SearchPlan): SQL {
 
 function filtersOf(search: ExerciseSearch): SQL {
   const conditions: SQL[] = [];
+  if (search.mine) {
+    conditions.push(sql`e.owner_id = ${search.userId}`);
+  }
   if (search.muscles.length > 0) {
     conditions.push(sql`e.primary_muscles && ${textArray(search.muscles)}`);
   }
@@ -196,7 +217,7 @@ export class ExercisesRepository {
     const collation = await this.collationOf(search.locale);
     const query = sql`
       select e.id, n.name, e.type, e.primary_muscles, e.secondary_muscles,
-             e.equipment, e.image_keys,
+             e.equipment, e.image_keys, (e.owner_id is not null) as custom,
              ${rankOf(search.plan)} as rank,
              ${tagHitsOf(search.plan)} as tag_hits,
              count(*) over () as total
@@ -227,7 +248,8 @@ export class ExercisesRepository {
   ): Promise<ExerciseDetailsRow | null> {
     const query = sql`
       select e.id, n.name, n.instructions, e.type, e.primary_muscles,
-             e.secondary_muscles, e.equipment, e.image_keys, e.category,
+             e.secondary_muscles, e.equipment, e.image_keys,
+             (e.owner_id is not null) as custom, e.category,
              e.force, e.mechanic, e.level
       from core.exercises e
       join lateral ${bestTranslation(locale, sql`t.name, t.instructions`)} as n(name, instructions) on true
@@ -235,5 +257,105 @@ export class ExercisesRepository {
     const result = await this.db.execute(query);
     const [row] = result.rows;
     return row === undefined ? null : detailsRowSchema.parse(row);
+  }
+
+  async create(exercise: NewExercise): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${`custom-exercises:${exercise.userId}`}, 0))`,
+      );
+      const [counted] = await tx
+        .select({ total: sql<number>`count(*)::int` })
+        .from(exercises)
+        .where(
+          and(
+            eq(exercises.ownerId, exercise.userId),
+            isNull(exercises.archivedAt),
+          ),
+        );
+      if ((counted?.total ?? 0) >= exercise.limit) {
+        return false;
+      }
+      const { input } = exercise;
+      await tx.insert(exercises).values({
+        id: exercise.id,
+        ownerId: exercise.userId,
+        source: 'user',
+        visibility: 'private',
+        type: input.type,
+        primaryMuscles: input.primaryMuscles,
+        secondaryMuscles: input.secondaryMuscles,
+        equipment: input.equipment,
+      });
+      await tx.insert(exerciseTranslations).values({
+        exerciseId: exercise.id,
+        locale: exercise.locale,
+        name: input.name,
+        instructions: input.instructions,
+        aliases: [],
+      });
+      return true;
+    });
+  }
+
+  async findOwnership(id: string): Promise<ExerciseOwnership | null> {
+    const [row] = await this.db
+      .select({
+        ownerId: exercises.ownerId,
+        archivedAt: exercises.archivedAt,
+      })
+      .from(exercises)
+      .where(eq(exercises.id, id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async update(
+    id: string,
+    userId: string,
+    input: ExerciseInput,
+  ): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const updated = await tx
+        .update(exercises)
+        .set({
+          type: input.type,
+          primaryMuscles: input.primaryMuscles,
+          secondaryMuscles: input.secondaryMuscles,
+          equipment: input.equipment,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(exercises.id, id),
+            eq(exercises.ownerId, userId),
+            isNull(exercises.archivedAt),
+          ),
+        )
+        .returning({ id: exercises.id });
+      if (updated.length === 0) {
+        return false;
+      }
+      await tx
+        .update(exerciseTranslations)
+        .set({ name: input.name, instructions: input.instructions })
+        .where(eq(exerciseTranslations.exerciseId, id));
+      return true;
+    });
+  }
+
+  async archive(id: string, userId: string): Promise<boolean> {
+    const archived = await this.db
+      .update(exercises)
+      .set({ archivedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(exercises.id, id),
+          eq(exercises.ownerId, userId),
+          isNull(exercises.archivedAt),
+        ),
+      )
+      .returning({ id: exercises.id });
+    return archived.length > 0;
   }
 }

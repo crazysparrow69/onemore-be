@@ -1,6 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { LOCALES, type Locale } from '../../db/schema/locales';
+import {
+  PRIMARY_ONLY_GROUPS,
+  type ExerciseType,
+} from '../../db/schema/exercises';
 import { DICTIONARIES, MUSCLE_GROUPS } from './dictionaries';
 
 const option = z.object({ id: z.string(), label: z.string() });
@@ -12,11 +16,11 @@ export const exerciseDictionariesSchema = z
       z.object({
         id: z.string(),
         label: z.string(),
-        muscles: z.array(option),
+        muscles: z.array(option.extend({ primaryOnly: z.boolean() })),
       }),
     ),
     equipment: z.array(option),
-    types: z.array(option),
+    types: z.array(option.extend({ example: z.string() })),
     categories: z.array(option),
     levels: z.array(option),
     forces: z.array(option),
@@ -46,10 +50,14 @@ export function buildDictionaries(locale: Locale): ExerciseDictionaries {
       muscles: group.muscles.map((id) => ({
         id,
         label: dictionary.muscles[id],
+        primaryOnly: (PRIMARY_ONLY_GROUPS as readonly string[]).includes(id),
       })),
     })),
     equipment: options(dictionary.equipment),
-    types: options(dictionary.types),
+    types: options(dictionary.types).map((type) => ({
+      ...type,
+      example: dictionary.typeExamples[type.id as ExerciseType],
+    })),
     categories: options(dictionary.categories),
     levels: options(dictionary.levels),
     forces: options(dictionary.forces),

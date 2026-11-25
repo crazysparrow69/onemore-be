@@ -51,6 +51,7 @@ export type Dictionary = {
   equipment: Record<Equipment, string>;
   equipmentAliases: Record<Equipment, readonly string[]>;
   types: Record<ExerciseType, string>;
+  typeExamples: Record<ExerciseType, string>;
   categories: Record<ExerciseCategory, string>;
   levels: Record<ExerciseLevel, string>;
   forces: Record<ExerciseForce, string>;

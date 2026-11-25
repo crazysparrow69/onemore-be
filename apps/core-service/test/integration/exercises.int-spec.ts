@@ -30,6 +30,7 @@ type Item = {
   secondaryMuscles: string[];
   equipment: string;
   image: string | null;
+  custom: boolean;
 };
 
 type Page = { items: Item[]; total: number; nextOffset: number | null };
@@ -225,6 +226,7 @@ describe('exercise catalog (real Postgres)', () => {
       expect(result.nextOffset).toBe(50);
       for (const item of result.items) {
         expect(Object.keys(item).sort()).toEqual([
+          'custom',
           'equipment',
           'id',
           'image',
@@ -544,10 +546,19 @@ describe('exercise catalog (real Postgres)', () => {
       }[];
       const upper = groups.find((group) => group.id === 'upper_body');
       expect(upper?.label).toBe('Верх тіла');
-      expect(upper?.muscles).toContainEqual({ id: 'chest', label: 'Груди' });
+      expect(upper?.muscles).toContainEqual({
+        id: 'chest',
+        label: 'Груди',
+        primaryOnly: false,
+      });
       expect(bodyOf(uk).equipment).toContainEqual({
         id: 'dumbbell',
         label: 'Гантелі',
+      });
+      expect(bodyOf(uk).types).toContainEqual({
+        id: 'duration',
+        label: 'Тривалість',
+        example: 'Планка, розтяжка',
       });
       expect(bodyOf(en).locale).toBe('en');
       expect(bodyOf(en).equipment).toContainEqual({

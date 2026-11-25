@@ -7,6 +7,10 @@ import {
   buildDictionaries,
   type ExerciseDictionaries,
 } from './exercise-dictionaries.response';
+import {
+  MAX_CUSTOM_EXERCISES,
+  type ExerciseInput,
+} from './exercise-input.schema';
 import { buildSearchPlan } from './exercise-search';
 import type {
   ExerciseDetails,
@@ -19,6 +23,7 @@ import {
   type ExerciseListRow,
 } from './exercises.repository';
 import type { ListExercisesQuery } from './list-exercises.schema';
+import { uuidV7 } from './uuid-v7';
 
 @Injectable()
 export class ExercisesService {
@@ -38,6 +43,7 @@ export class ExercisesService {
       plan: buildSearchPlan(query.q),
       muscles: query.muscle ?? [],
       equipment: query.equipment ?? [],
+      mine: query.mine ?? false,
       limit: query.limit,
       offset: query.offset,
     });
@@ -54,13 +60,73 @@ export class ExercisesService {
     const locale = await this.localeOf(auth);
     const row = await this.exercises.findById(auth.id, locale, id);
     if (!row) {
-      throw new AppException(
-        HttpStatus.NOT_FOUND,
-        'EXERCISE_NOT_FOUND',
-        'Exercise not found',
-      );
+      throw notFound();
     }
     return toDetails(row);
+  }
+
+  async create(auth: AuthUser, input: ExerciseInput): Promise<ExerciseDetails> {
+    const user = await this.users.findById(auth.id);
+    if (!user) {
+      throw new AppException(
+        HttpStatus.CONFLICT,
+        'PROFILE_REQUIRED',
+        'Create the profile before adding exercises',
+      );
+    }
+    const id = uuidV7();
+    const created = await this.exercises.create({
+      id,
+      userId: auth.id,
+      locale:
+        LOCALES.find((locale) => locale === user.language) ?? FALLBACK_LOCALE,
+      input,
+      limit: MAX_CUSTOM_EXERCISES,
+    });
+    if (!created) {
+      throw new AppException(
+        HttpStatus.CONFLICT,
+        'EXERCISE_LIMIT_REACHED',
+        `At most ${MAX_CUSTOM_EXERCISES} own exercises are allowed`,
+      );
+    }
+    return this.get(auth, id);
+  }
+
+  async update(
+    auth: AuthUser,
+    id: string,
+    input: ExerciseInput,
+  ): Promise<ExerciseDetails> {
+    await this.requireOwn(auth, id);
+    if (!(await this.exercises.update(id, auth.id, input))) {
+      throw notFound();
+    }
+    return this.get(auth, id);
+  }
+
+  async archive(auth: AuthUser, id: string): Promise<void> {
+    await this.requireOwn(auth, id);
+    if (!(await this.exercises.archive(id, auth.id))) {
+      throw notFound();
+    }
+  }
+
+  private async requireOwn(auth: AuthUser, id: string): Promise<void> {
+    const ownership = await this.exercises.findOwnership(id);
+    if (!ownership) {
+      throw notFound();
+    }
+    if (ownership.ownerId === null) {
+      throw new AppException(
+        HttpStatus.FORBIDDEN,
+        'EXERCISE_READ_ONLY',
+        'Catalog exercises cannot be changed',
+      );
+    }
+    if (ownership.ownerId !== auth.id || ownership.archivedAt !== null) {
+      throw notFound();
+    }
   }
 
   async dictionaries(auth: AuthUser): Promise<ExerciseDictionaries> {
@@ -75,6 +141,14 @@ export class ExercisesService {
   }
 }
 
+function notFound(): AppException {
+  return new AppException(
+    HttpStatus.NOT_FOUND,
+    'EXERCISE_NOT_FOUND',
+    'Exercise not found',
+  );
+}
+
 function toListItem(
   row: ExerciseListRow,
 ): ExerciseListResponse['items'][number] {
@@ -86,6 +160,7 @@ function toListItem(
     secondaryMuscles: row.secondary_muscles,
     equipment: row.equipment,
     image: row.image_keys[0] ?? null,
+    custom: row.custom,
   };
 }
 
@@ -98,6 +173,7 @@ function toDetails(row: ExerciseDetailsRow): ExerciseDetails {
     secondaryMuscles: row.secondary_muscles,
     equipment: row.equipment,
     image: row.image_keys[0] ?? null,
+    custom: row.custom,
     imageKeys: row.image_keys,
     category: row.category,
     force: row.force,

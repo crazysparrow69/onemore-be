@@ -5,6 +5,14 @@ import {
 } from './list-exercises.schema';
 
 describe('listExercisesQuerySchema', () => {
+  it('parses mine as a boolean', () => {
+    expect(listExercisesQuerySchema.parse({ mine: 'true' }).mine).toBe(true);
+    expect(listExercisesQuerySchema.parse({ mine: 'false' }).mine).toBe(false);
+    expect(listExercisesQuerySchema.safeParse({ mine: 'yes' }).success).toBe(
+      false,
+    );
+  });
+
   it('applies defaults to an empty query', () => {
     expect(listExercisesQuerySchema.parse({})).toEqual({
       offset: 0,

@@ -87,6 +87,7 @@ describe('openapi.json', () => {
     expect(parameters.sort()).toEqual([
       'equipment',
       'limit',
+      'mine',
       'muscle',
       'offset',
       'q',
@@ -106,6 +107,44 @@ describe('openapi.json', () => {
         document.paths['/api/exercise-dictionaries']?.get?.responses ?? {},
       ).sort(),
     ).toEqual(['200', '401']);
+  });
+
+  it('documents the routes that create, replace and archive an own exercise', () => {
+    const exercises = document.paths['/api/exercises'];
+    const one = document.paths['/api/exercises/{id}'];
+    const input = {
+      content: {
+        'application/json': {
+          schema: { $ref: '#/components/schemas/ExerciseInput' },
+        },
+      },
+    };
+
+    for (const operation of [exercises?.post, one?.put, one?.delete]) {
+      expect(operation?.security).toEqual([{ bearer: [] }]);
+    }
+    expect(exercises?.post?.requestBody).toMatchObject(input);
+    expect(one?.put?.requestBody).toMatchObject(input);
+    expect(Object.keys(exercises?.post?.responses ?? {}).sort()).toEqual([
+      '201',
+      '400',
+      '401',
+      '409',
+    ]);
+    expect(Object.keys(one?.put?.responses ?? {}).sort()).toEqual([
+      '200',
+      '400',
+      '401',
+      '403',
+      '404',
+    ]);
+    expect(Object.keys(one?.delete?.responses ?? {}).sort()).toEqual([
+      '204',
+      '400',
+      '401',
+      '403',
+      '404',
+    ]);
   });
 
   it('documents PATCH /api/me with a bearer token and every response', () => {

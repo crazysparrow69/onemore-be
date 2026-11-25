@@ -93,6 +93,13 @@ export const en: Dictionary = {
     distance_duration: 'Distance & duration',
     weight_distance: 'Weight & distance',
   },
+  typeExamples: {
+    weight_reps: 'Bench press, squat',
+    bodyweight_reps: 'Pull-up, dip, push-up',
+    duration: 'Plank, stretch',
+    distance_duration: 'Running, rowing',
+    weight_distance: "Farmer's walk, sled push",
+  },
   categories: {
     strength: 'Strength',
     powerlifting: 'Powerlifting',

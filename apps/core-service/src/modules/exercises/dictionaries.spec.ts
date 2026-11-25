@@ -16,6 +16,7 @@ const LABELLED = [
   ['muscles', PRIMARY_MUSCLES],
   ['equipment', EQUIPMENT],
   ['types', EXERCISE_TYPES],
+  ['typeExamples', EXERCISE_TYPES],
   ['categories', EXERCISE_CATEGORIES],
   ['levels', EXERCISE_LEVELS],
   ['forces', EXERCISE_FORCES],
@@ -71,12 +72,25 @@ describe('buildDictionaries', () => {
     expect(uk.muscleGroups[0]?.muscles).toContainEqual({
       id: 'chest',
       label: 'Груди',
+      primaryOnly: false,
     });
     expect(uk.equipment).toContainEqual({ id: 'dumbbell', label: 'Гантелі' });
     expect(buildDictionaries('en').equipment).toContainEqual({
       id: 'dumbbell',
       label: 'Dumbbell',
     });
+  });
+
+  it('marks the pseudo groups as primary-only and gives every type an example', () => {
+    const en = buildDictionaries('en');
+    const muscles = en.muscleGroups.flatMap((group) => group.muscles);
+
+    expect(
+      muscles.filter((muscle) => muscle.primaryOnly).map((muscle) => muscle.id),
+    ).toEqual(['full_body', 'cardio', 'other']);
+    for (const type of en.types) {
+      expect(type.example.length).toBeGreaterThan(0);
+    }
   });
 
   it('lists every option the filters and the card need', () => {

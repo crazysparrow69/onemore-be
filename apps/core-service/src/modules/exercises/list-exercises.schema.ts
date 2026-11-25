@@ -26,6 +26,13 @@ export const listExercisesQuerySchema = z
     equipment: commaSeparated(EQUIPMENT).optional().meta({
       description: 'Comma-separated equipment; any of them matches',
     }),
+    mine: z
+      .enum(['true', 'false'])
+      .transform((value) => value === 'true')
+      .optional()
+      .meta({
+        description: 'true limits the list to exercises created by the caller',
+      }),
     offset: z.coerce.number().int().min(0).default(0),
     limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
   })

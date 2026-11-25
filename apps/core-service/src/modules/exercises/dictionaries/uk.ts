@@ -93,6 +93,13 @@ export const uk: Dictionary = {
     distance_duration: 'Дистанція і тривалість',
     weight_distance: 'Вага і дистанція',
   },
+  typeExamples: {
+    weight_reps: 'Жим лежачи, присідання',
+    bodyweight_reps: 'Підтягування, віджимання на брусах',
+    duration: 'Планка, розтяжка',
+    distance_duration: 'Біг, гребля',
+    weight_distance: 'Прогулянка фермера, штовхання саней',
+  },
   categories: {
     strength: 'Силові',
     powerlifting: 'Пауерліфтинг',

@@ -143,7 +143,7 @@
             }
           },
           "409": {
-            "description": "Conflict: the value is already used (for example EMAIL_TAKEN, NICKNAME_TAKEN)",
+            "description": "Conflict: the value is already used or a limit is reached (for example NICKNAME_TAKEN, EXERCISE_LIMIT_REACHED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -217,7 +217,7 @@
             }
           },
           "409": {
-            "description": "Conflict: the value is already used (for example EMAIL_TAKEN, NICKNAME_TAKEN)",
+            "description": "Conflict: the value is already used or a limit is reached (for example NICKNAME_TAKEN, EXERCISE_LIMIT_REACHED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -267,6 +267,19 @@
             "description": "Comma-separated equipment; any of them matches",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "mine",
+            "required": false,
+            "in": "query",
+            "description": "true limits the list to exercises created by the caller",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
             }
           },
           {
@@ -332,6 +345,70 @@
         "tags": [
           "exercises"
         ]
+      },
+      "post": {
+        "operationId": "ExercisesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created private exercise",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseDetails_Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: the value is already used or a limit is reached (for example NICKNAME_TAKEN, EXERCISE_LIMIT_REACHED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "exercises"
+        ]
       }
     },
     "/api/exercises/{id}": {
@@ -372,6 +449,159 @@
           },
           "401": {
             "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "exercises"
+        ]
+      },
+      "put": {
+        "operationId": "ExercisesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The private exercise after a full replacement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseDetails_Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "exercises"
+        ]
+      },
+      "delete": {
+        "operationId": "ExercisesController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The exercise is archived"
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
             "content": {
               "application/json": {
                 "schema": {
@@ -712,6 +942,9 @@
           "image": {
             "type": "string",
             "nullable": true
+          },
+          "custom": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -721,7 +954,8 @@
           "primaryMuscles",
           "secondaryMuscles",
           "equipment",
-          "image"
+          "image",
+          "custom"
         ],
         "additionalProperties": false
       },
@@ -852,6 +1086,9 @@
             "type": "string",
             "nullable": true
           },
+          "custom": {
+            "type": "boolean"
+          },
           "imageKeys": {
             "type": "array",
             "items": {
@@ -916,12 +1153,126 @@
           "secondaryMuscles",
           "equipment",
           "image",
+          "custom",
           "imageKeys",
           "category",
           "force",
           "mechanic",
           "level",
           "instructions"
+        ],
+        "additionalProperties": false
+      },
+      "ExerciseInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "weight_reps",
+              "bodyweight_reps",
+              "duration",
+              "distance_duration",
+              "weight_distance"
+            ]
+          },
+          "primaryMuscles": {
+            "minItems": 1,
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "chest",
+                "lats",
+                "upper_back",
+                "lower_back",
+                "traps",
+                "shoulders",
+                "biceps",
+                "triceps",
+                "forearms",
+                "abdominals",
+                "quadriceps",
+                "hamstrings",
+                "glutes",
+                "calves",
+                "adductors",
+                "abductors",
+                "neck",
+                "full_body",
+                "cardio",
+                "other"
+              ]
+            }
+          },
+          "secondaryMuscles": {
+            "default": [],
+            "maxItems": 17,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "chest",
+                "lats",
+                "upper_back",
+                "lower_back",
+                "traps",
+                "shoulders",
+                "biceps",
+                "triceps",
+                "forearms",
+                "abdominals",
+                "quadriceps",
+                "hamstrings",
+                "glutes",
+                "calves",
+                "adductors",
+                "abductors",
+                "neck"
+              ]
+            }
+          },
+          "equipment": {
+            "default": "none",
+            "type": "string",
+            "enum": [
+              "none",
+              "barbell",
+              "ez_bar",
+              "trap_bar",
+              "dumbbell",
+              "kettlebell",
+              "plate",
+              "machine",
+              "cable",
+              "smith_machine",
+              "suspension",
+              "band",
+              "medicine_ball",
+              "exercise_ball",
+              "foam_roll",
+              "other"
+            ]
+          },
+          "instructions": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "primaryMuscles"
         ],
         "additionalProperties": false
       },
@@ -956,11 +1307,15 @@
                       },
                       "label": {
                         "type": "string"
+                      },
+                      "primaryOnly": {
+                        "type": "boolean"
                       }
                     },
                     "required": [
                       "id",
-                      "label"
+                      "label",
+                      "primaryOnly"
                     ],
                     "additionalProperties": false
                   }
@@ -1003,11 +1358,15 @@
                 },
                 "label": {
                   "type": "string"
+                },
+                "example": {
+                  "type": "string"
                 }
               },
               "required": [
                 "id",
-                "label"
+                "label",
+                "example"
               ],
               "additionalProperties": false
             }
