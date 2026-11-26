@@ -30,6 +30,7 @@ import {
 import {
   bestTranslation,
   textArray,
+  imageKeysOf,
   typeLockedOf,
   typesVisibleTo,
   visibleTo,
@@ -63,6 +64,7 @@ const detailsRowSchema = z
     mechanic: z.enum(EXERCISE_MECHANICS).nullable(),
     level: z.enum(EXERCISE_LEVELS).nullable(),
     instructions: z.array(z.string()),
+    photo_id: z.uuid().nullable(),
     type_locked: z.boolean(),
   })
   .transform(camelizeKeys);
@@ -77,9 +79,14 @@ export type NewExercise = {
 
 export type UpdateResult = 'updated' | 'not_found' | 'type_locked';
 
+export type UpdateOutcome = {
+  result: UpdateResult;
+  replacedPhotoId: string | null;
+};
+
 export type ExerciseOwnership = Pick<
   typeof exercises.$inferSelect,
-  'ownerId' | 'archivedAt'
+  'ownerId' | 'archivedAt' | 'photoId'
 >;
 
 export type ExerciseListRow = z.infer<typeof listRowSchema>;
@@ -125,7 +132,7 @@ export class ExercisesRepository {
     const collation = await this.collationOf(search.locale);
     const query = sql`
       select e.id, n.name, e.type, e.primary_muscles, e.secondary_muscles,
-             e.equipment, e.image_keys, (e.owner_id is not null) as custom,
+             e.equipment, ${imageKeysOf()} as image_keys, (e.owner_id is not null) as custom,
              ${rankOf(search.plan)} as rank,
              ${tagHitsOf(search.plan)} as tag_hits,
              count(*) over () as total
@@ -160,8 +167,8 @@ export class ExercisesRepository {
   ): Promise<ExerciseDetailsRow | null> {
     const query = sql`
       select e.id, n.name, n.instructions, e.type, e.primary_muscles,
-             e.secondary_muscles, e.equipment, e.image_keys,
-             (e.owner_id is not null) as custom, e.category,
+             e.secondary_muscles, e.equipment, ${imageKeysOf()} as image_keys,
+             e.photo_id, (e.owner_id is not null) as custom, e.category,
              e.force, e.mechanic, e.level,
              ${typeLockedOf(sql`e.id`)} as type_locked
       from core.exercises e
@@ -194,6 +201,7 @@ export class ExercisesRepository {
         primaryMuscles: input.primaryMuscles,
         secondaryMuscles: input.secondaryMuscles,
         equipment: input.equipment,
+        photoId: input.photoId,
       });
       await tx.insert(exerciseTranslations).values({
         exerciseId: id,
@@ -211,6 +219,7 @@ export class ExercisesRepository {
       .select({
         ownerId: exercises.ownerId,
         archivedAt: exercises.archivedAt,
+        photoId: exercises.photoId,
       })
       .from(exercises)
       .where(eq(exercises.id, id))
@@ -222,23 +231,23 @@ export class ExercisesRepository {
     id: string,
     userId: string,
     input: ExerciseInput,
-  ): Promise<UpdateResult> {
+  ): Promise<UpdateOutcome> {
     try {
       return await this.db.transaction(async (tx) => {
         const [current] = await tx
-          .select({ type: exercises.type })
+          .select({ type: exercises.type, photoId: exercises.photoId })
           .from(exercises)
           .where(ownActive(id, userId))
           .for('update');
         if (!current) {
-          return 'not_found';
+          return { result: 'not_found', replacedPhotoId: null };
         }
         if (current.type !== input.type) {
           const locked = await tx.execute(
             sql`select ${typeLockedOf(sql`${id}::uuid`)} as locked`,
           );
           if (locked.rows[0]?.locked === true) {
-            return 'type_locked';
+            return { result: 'type_locked', replacedPhotoId: null };
           }
         }
         await tx
@@ -248,17 +257,22 @@ export class ExercisesRepository {
             primaryMuscles: input.primaryMuscles,
             secondaryMuscles: input.secondaryMuscles,
             equipment: input.equipment,
+            photoId: input.photoId,
           })
           .where(eq(exercises.id, id));
         await tx
           .update(exerciseTranslations)
           .set({ name: input.name, instructions: input.instructions })
           .where(eq(exerciseTranslations.exerciseId, id));
-        return 'updated';
+        return {
+          result: 'updated',
+          replacedPhotoId:
+            current.photoId !== input.photoId ? current.photoId : null,
+        };
       });
     } catch (error) {
       if (pgErrorOf(error)?.code === PG_FOREIGN_KEY_VIOLATION) {
-        return 'type_locked';
+        return { result: 'type_locked', replacedPhotoId: null };
       }
       throw error;
     }

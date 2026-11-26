@@ -141,6 +141,10 @@ jobs:
             -e APP_VERSION="$APP_VERSION" \
             -e DATABASE_URL=postgresql://smoke:smoke@127.0.0.1:1/smoke \
             -e NEON_AUTH_URL=https://auth.example.test/neondb/auth \
+            -e CLOUDINARY_CLOUD_NAME=smoke \
+            -e CLOUDINARY_API_KEY=1 \
+            -e CLOUDINARY_API_SECRET=smoke \
+            -e CLOUDINARY_FOLDER=smoke \
             "$IMAGE"
           for _ in $(seq 1 30); do
             if curl -sf http://127.0.0.1:8080/health -o health.json; then

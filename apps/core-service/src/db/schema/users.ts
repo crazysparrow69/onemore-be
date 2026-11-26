@@ -1,8 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { check, pgSchema, text, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  check,
+  text,
+  uniqueIndex,
+  uuid,
+  type AnyPgColumn,
+} from 'drizzle-orm/pg-core';
 import { timestamps } from './columns';
+import { coreSchema } from './core-schema';
+import { mediaAssets } from './media';
 
-export const coreSchema = pgSchema('core');
+export { coreSchema };
 
 export const USER_ROLES = ['user', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
@@ -21,6 +29,9 @@ export const users = coreSchema.table(
     language: text('language').notNull(),
     units: text('units').$type<Units>().notNull().default('kg'),
     timeZone: text('time_zone').notNull(),
+    avatarId: uuid('avatar_id')
+      .unique()
+      .references((): AnyPgColumn => mediaAssets.id, { onDelete: 'set null' }),
     ...timestamps,
   },
   (table) => [

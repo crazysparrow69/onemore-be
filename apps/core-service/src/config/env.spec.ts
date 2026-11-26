@@ -8,6 +8,10 @@ const valid = {
   APP_VERSION: 'abc123',
   DATABASE_URL: 'postgresql://core_svc:secret@localhost:5432/onemore',
   NEON_AUTH_URL: 'https://auth.example.test/neondb/auth',
+  CLOUDINARY_CLOUD_NAME: 'demo-cloud',
+  CLOUDINARY_API_KEY: '123456789012345',
+  CLOUDINARY_API_SECRET: 'secret-value',
+  CLOUDINARY_FOLDER: 'onemore-test',
 };
 
 describe('validateEnv', () => {
@@ -19,6 +23,10 @@ describe('validateEnv', () => {
       APP_VERSION: 'abc123',
       DATABASE_URL: 'postgresql://core_svc:secret@localhost:5432/onemore',
       NEON_AUTH_URL: 'https://auth.example.test/neondb/auth',
+      CLOUDINARY_CLOUD_NAME: 'demo-cloud',
+      CLOUDINARY_API_KEY: '123456789012345',
+      CLOUDINARY_API_SECRET: 'secret-value',
+      CLOUDINARY_FOLDER: 'onemore-test',
     });
   });
 
@@ -92,4 +100,22 @@ describe('validateEnv', () => {
       );
     },
   );
+  it.each([
+    ['CLOUDINARY_CLOUD_NAME', 'bad name'],
+    ['CLOUDINARY_API_KEY', 'abc'],
+    ['CLOUDINARY_API_SECRET', ''],
+    ['CLOUDINARY_FOLDER', 'Bad/Folder'],
+  ])('throws on an invalid %s (%j)', (key, value) => {
+    expect(() => validateEnv({ ...valid, [key]: value })).toThrow(
+      new RegExp(`${key}:`),
+    );
+  });
+
+  it('does not put the Cloudinary secret into the error message', () => {
+    try {
+      validateEnv({ ...valid, CLOUDINARY_API_KEY: 'secret-looking-value' });
+    } catch (error) {
+      expect((error as Error).message).not.toContain('secret-value');
+    }
+  });
 });

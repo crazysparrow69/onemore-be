@@ -4,3 +4,7 @@ process.env.LOG_LEVEL = 'error';
 process.env.APP_VERSION = 'openapi';
 process.env.DATABASE_URL = 'postgresql://openapi:openapi@127.0.0.1:1/openapi';
 process.env.NEON_AUTH_URL = 'https://auth.example.test/neondb/auth';
+process.env.CLOUDINARY_CLOUD_NAME = 'openapi';
+process.env.CLOUDINARY_API_KEY = '1';
+process.env.CLOUDINARY_API_SECRET = 'openapi';
+process.env.CLOUDINARY_FOLDER = 'openapi';

@@ -77,6 +77,10 @@ describe('own exercises (real Postgres)', () => {
     process.env.APP_VERSION = 'test';
     process.env.DATABASE_URL = coreUrl;
     process.env.NEON_AUTH_URL = TEST_AUTH_URL;
+    process.env.CLOUDINARY_CLOUD_NAME = 'test-cloud';
+    process.env.CLOUDINARY_API_KEY = '123456789012345';
+    process.env.CLOUDINARY_API_SECRET = 'test-secret';
+    process.env.CLOUDINARY_FOLDER = 'onemore-test';
 
     jwt = await createTestJwt();
     const { AppModule } = await import('../../src/app.module.js');
@@ -195,6 +199,7 @@ describe('own exercises (real Postgres)', () => {
         image: null,
         custom: true,
         imageKeys: [],
+        photoId: null,
         category: null,
         force: null,
         mechanic: null,

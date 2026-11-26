@@ -79,4 +79,17 @@ describe('patchCurrentUserSchema', () => {
       false,
     );
   });
+  it('accepts an avatar id alone, and null to remove the avatar', () => {
+    const avatarId = '0198f1c2-7d3a-7b5e-9c1d-2a4b6c8d0e1f';
+    expect(patchCurrentUserSchema.parse({ avatarId })).toEqual({ avatarId });
+    expect(patchCurrentUserSchema.parse({ avatarId: null })).toEqual({
+      avatarId: null,
+    });
+  });
+
+  it('rejects an avatar id that is not a uuid', () => {
+    expect(patchCurrentUserSchema.safeParse({ avatarId: 'abc' }).success).toBe(
+      false,
+    );
+  });
 });

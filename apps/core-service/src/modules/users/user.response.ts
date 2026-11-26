@@ -14,6 +14,9 @@ export const userResponseSchema = z
     language: z.string(),
     units: z.enum(UNITS),
     timeZone: z.string(),
+    avatar: z.string().nullable().meta({
+      description: 'Media key of the avatar; null when the user has none',
+    }),
     createdAt: z.string().meta({ format: 'date-time' }),
   })
   .meta({ id: 'UserResponse' });
@@ -32,6 +35,7 @@ export function toUserResponse(row: UserRecord, auth: AuthUser): UserResponse {
     language: row.language,
     units: row.units,
     timeZone: row.timeZone,
+    avatar: row.avatarKey,
     createdAt: row.createdAt.toISOString(),
   };
 }

@@ -29,6 +29,7 @@ Chat language: Russian. Code, comments, identifiers, commit messages, docs: Engl
 | Service-to-service | REST + Google ID token (`ServiceAuthGuard`). No gRPC, no TCP transport, no Redis/BullMQ, no gateway |
 | Tests | Vitest (+ `unplugin-swc`), Testcontainers (Postgres, same major as Neon), Supertest |
 | Lint | ESLint flat config + type-aware typescript-eslint (`no-floating-promises` on), Prettier |
+| Media | Cloudinary via the official `cloudinary` SDK, only inside `modules/media/storage` (port `MEDIA_STORAGE`); no global `cloudinary.config()` |
 | Hosting | Cloud Run `europe-west1`, Cloud Build on push to `main`, GitHub Actions on PR |
 
 Do NOT add a dependency that is not in this table or the plan. If one seems necessary, stop and ask.
@@ -38,7 +39,7 @@ Do NOT add a dependency that is not in this table or the plan. If one seems nece
 - `core-service` (schema `core`, exists): users, exercises, templates, schedule, sessions (workouts, sets), `internal`. HTTP routes use the global prefix `api`, except `GET /health` and `GET /health/ready`. Today it serves those health routes plus `GET /api/me` and `PUT /api/me`.
 - `nutrition-service` (schema `nutrition`): body, goals, weight, targets (Mifflin-St Jeor), food-log, food-suggestions, `internal`.
 - `ai-service`: **v0.2, do not create or reference it in MVP code.**
-- MVP = v0.1 = auth, exercises, workouts + calendar, nutrition diary. NOT in MVP: AI, charts, product database, barcode, social, mobile, GDPR export, Pub/Sub, Cloudinary. Do not build or scaffold these.
+- MVP = v0.1 = auth, exercises, workouts + calendar, nutrition diary. NOT in MVP: AI, charts, product database, barcode, social, mobile, GDPR export, Pub/Sub. Do not build or scaffold these. Cloudinary is only for user photos (avatar, own exercise photo): `modules/media`.
 
 Details: [reference/architecture.md](reference/architecture.md). Scope, roadmap, open questions: [reference/scope-and-status.md](reference/scope-and-status.md).
 
@@ -47,7 +48,7 @@ Details: [reference/architecture.md](reference/architecture.md). Scope, roadmap,
 **Security / data**
 1. Every repository query filters by owner `userId`; reads go through `AccessPolicy.canRead(viewer, owner, resource)`. `userId` comes only from the verified JWT, never from body, query, or params.
 2. All services are public, so every route needs `UserJwtGuard` unless it is marked `@Public()` (health only); `/internal/*` needs `ServiceAuthGuard`. A user JWT that is missing, malformed, expired, signed by the wrong key, or has the wrong issuer or `aud` is 401: a bad audience means the token is not ours, not that the user lacks a role. 403 is only for an authenticated user whose `users.role` is missing or not allowed. Service-to-service ID tokens still reject a wrong `aud` with 403. Guard tests cover each of these.
-3. Never log tokens, passwords, connection strings, or diary/food contents (pino `redact`).
+3. Never log tokens, passwords, connection strings, or diary/food contents (pino `redact`). The Cloudinary API secret lives only in `.env` (git-ignored) locally and in Secret Manager (`cloudinary-api-secret`) in prod; cloud name and API key are not committed either, they come from the Cloud Build trigger substitutions.
 4. No secrets at image build time (no ARG/ENV). Secrets only from Secret Manager at runtime; locally `.env` (git-ignored) + committed `.env.example`.
 
 **Boundaries**

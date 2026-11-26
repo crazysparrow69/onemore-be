@@ -12,6 +12,10 @@ substitutions:
   _MAX_INSTANCES: '3'
   _DB_SECRET: core-database-url
   _NEON_AUTH_URL: https://ep-shy-leaf-b9dtc17c.neonauth.c-7.eu-central-1.aws.neon.tech/neondb/auth
+  _CLOUDINARY_CLOUD_NAME: ''
+  _CLOUDINARY_API_KEY: ''
+  _CLOUDINARY_FOLDER: onemore-prod
+  _CLOUDINARY_SECRET: cloudinary-api-secret
 
 serviceAccount: projects/${PROJECT_ID}/serviceAccounts/sa-cloudbuild@${PROJECT_ID}.iam.gserviceaccount.com
 
@@ -67,8 +71,8 @@ steps:
       - --cpu-boost
       - --service-account=${_RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com
       - --port=8080
-      - --set-env-vars=NODE_ENV=production,LOG_LEVEL=info,APP_VERSION=${COMMIT_SHA},NEON_AUTH_URL=${_NEON_AUTH_URL}
-      - --set-secrets=DATABASE_URL=${_DB_SECRET}:latest
+      - --set-env-vars=NODE_ENV=production,LOG_LEVEL=info,APP_VERSION=${COMMIT_SHA},NEON_AUTH_URL=${_NEON_AUTH_URL},CLOUDINARY_CLOUD_NAME=${_CLOUDINARY_CLOUD_NAME},CLOUDINARY_API_KEY=${_CLOUDINARY_API_KEY},CLOUDINARY_FOLDER=${_CLOUDINARY_FOLDER}
+      - --set-secrets=DATABASE_URL=${_DB_SECRET}:latest,CLOUDINARY_API_SECRET=${_CLOUDINARY_SECRET}:latest
       - --no-traffic
       - --tag=candidate
       - --revision-suffix=${SHORT_SHA}

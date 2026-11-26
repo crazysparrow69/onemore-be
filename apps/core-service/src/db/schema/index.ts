@@ -38,3 +38,5 @@ export {
 } from './workouts';
 export type { SetKind } from './workouts';
 export { templateExercises, templateSets, templates } from './templates';
+export { MEDIA_PURPOSES, MEDIA_STATUSES, mediaAssets } from './media';
+export type { MediaPurpose, MediaStatus } from './media';

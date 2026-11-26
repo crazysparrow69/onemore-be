@@ -36,6 +36,7 @@ export const exerciseInputSchema = z
     secondaryMuscles: z.array(z.enum(MUSCLES)).max(MUSCLES.length).default([]),
     equipment: z.enum(EQUIPMENT).default('none'),
     instructions: instructions.default([]),
+    photoId: z.uuid().nullable().default(null),
   })
   .superRefine((value, context) => {
     if (hasDuplicates(value.primaryMuscles)) {

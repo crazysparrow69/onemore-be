@@ -14,6 +14,10 @@ export default defineConfig({
       // The pool connects lazily: /health never reaches this address.
       DATABASE_URL: 'postgresql://e2e:e2e@127.0.0.1:1/e2e',
       NEON_AUTH_URL: 'https://auth.example.test/neondb/auth',
+      CLOUDINARY_CLOUD_NAME: 'e2e',
+      CLOUDINARY_API_KEY: '1',
+      CLOUDINARY_API_SECRET: 'e2e',
+      CLOUDINARY_FOLDER: 'e2e',
     },
   },
   plugins: [

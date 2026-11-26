@@ -39,6 +39,8 @@ describe('openapi.json', () => {
       '/api/exercises',
       '/api/exercises/{id}',
       '/api/me',
+      '/api/media/uploads',
+      '/api/media/uploads/{id}/complete',
       '/api/templates',
       '/api/templates/{id}',
       '/api/workouts',
@@ -47,6 +49,23 @@ describe('openapi.json', () => {
       '/health',
       '/health/ready',
     ]);
+  });
+
+  it('documents the media upload flow with the 429 limit', () => {
+    const create = document.paths['/api/media/uploads']?.post;
+    expect(Object.keys(create?.responses ?? {}).sort()).toEqual([
+      '201',
+      '400',
+      '401',
+      '409',
+      '429',
+    ]);
+    expect(
+      Object.keys(
+        document.paths['/api/media/uploads/{id}/complete']?.post?.responses ??
+          {},
+      ).sort(),
+    ).toEqual(['200', '400', '401', '404']);
   });
 
   it('requires a bearer token on /api/me but not on /health', () => {

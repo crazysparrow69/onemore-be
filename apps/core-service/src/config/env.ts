@@ -43,6 +43,16 @@ const httpsUrl = z
     { message: 'must be an https URL' },
   );
 
+const cloudName = z
+  .string(required)
+  .regex(/^[a-z0-9_-]+$/i, 'must contain only letters, digits, _ and -');
+
+const apiKey = z.string(required).regex(/^\d+$/, 'must contain only digits');
+
+const mediaFolder = z
+  .string(required)
+  .regex(/^[a-z0-9_-]+$/, 'must contain only a-z, 0-9, _ and -');
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production'], required),
   PORT: port,
@@ -53,6 +63,10 @@ export const envSchema = z.object({
   APP_VERSION: z.string(required).min(1, 'must not be empty'),
   DATABASE_URL: postgresUrl,
   NEON_AUTH_URL: httpsUrl,
+  CLOUDINARY_CLOUD_NAME: cloudName,
+  CLOUDINARY_API_KEY: apiKey,
+  CLOUDINARY_API_SECRET: z.string(required).min(1, 'must not be empty'),
+  CLOUDINARY_FOLDER: mediaFolder,
 });
 
 export const ENV_KEYS = Object.keys(envSchema.shape);

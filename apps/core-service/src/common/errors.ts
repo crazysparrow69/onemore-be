@@ -27,6 +27,21 @@ const CATALOG = {
     HttpStatus.CONFLICT,
     'An exercise changed while saving, try again',
   ],
+  MEDIA_NOT_FOUND: [HttpStatus.NOT_FOUND, 'Media not found'],
+  MEDIA_SIGNATURE_INVALID: [
+    HttpStatus.BAD_REQUEST,
+    'The upload could not be verified',
+  ],
+  MEDIA_PURPOSE_MISMATCH: [
+    HttpStatus.BAD_REQUEST,
+    'The file was uploaded for another purpose',
+  ],
+  MEDIA_NOT_READY: [HttpStatus.CONFLICT, 'The upload is not finished'],
+  MEDIA_IN_USE: [HttpStatus.CONFLICT, 'The file is already used'],
+  MEDIA_UPLOAD_LIMIT: [
+    HttpStatus.TOO_MANY_REQUESTS,
+    'Too many unfinished uploads',
+  ],
   SET_VALUES_INVALID: [
     HttpStatus.BAD_REQUEST,
     'Set values do not match the exercise type',

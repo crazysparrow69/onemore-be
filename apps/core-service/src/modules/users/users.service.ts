@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { appError } from '../../common/errors';
 import { toLocale, type Locale } from '../../db/schema/locales';
 import type { AuthUser } from '../auth/auth.types';
+import { MediaService } from '../media/media.service';
 import type { PatchCurrentUser } from './patch-current-user.schema';
 import type { UpdateCurrentUser } from './update-current-user.schema';
 import { toUserResponse, type UserResponse } from './user.response';
@@ -9,7 +10,10 @@ import { UsersRepository, type UserRecord } from './users.repository';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly users: UsersRepository) {}
+  constructor(
+    private readonly users: UsersRepository,
+    private readonly media: MediaService,
+  ) {}
 
   findById(id: string): Promise<UserRecord | null> {
     return this.users.findById(id);
@@ -52,10 +56,42 @@ export class UsersService {
     auth: AuthUser,
     input: PatchCurrentUser,
   ): Promise<UserResponse> {
-    const row = await this.users.update(auth.id, input);
-    if (!row) {
+    const { avatarId, ...fields } = input;
+    const current = await this.users.findById(auth.id);
+    if (!current) {
       throw appError('USER_NOT_FOUND');
     }
+    const avatarChanged =
+      avatarId !== undefined && avatarId !== current.avatarId;
+    if (avatarChanged && avatarId !== null) {
+      await this.media.claim(auth.id, avatarId, 'avatar');
+    }
+    let row: UserRecord | null;
+    try {
+      row = await this.users.update(auth.id, {
+        ...fields,
+        ...(avatarChanged ? { avatarId } : {}),
+      });
+    } catch (error) {
+      await this.undoClaim(auth.id, avatarChanged ? avatarId : undefined);
+      throw error;
+    }
+    if (!row) {
+      await this.undoClaim(auth.id, avatarChanged ? avatarId : undefined);
+      throw appError('USER_NOT_FOUND');
+    }
+    if (avatarChanged && current.avatarId) {
+      await this.media.release(auth.id, current.avatarId);
+    }
     return toUserResponse(row, auth);
+  }
+
+  private async undoClaim(
+    userId: string,
+    avatarId: string | null | undefined,
+  ): Promise<void> {
+    if (avatarId) {
+      await this.media.unclaim(userId, avatarId);
+    }
   }
 }

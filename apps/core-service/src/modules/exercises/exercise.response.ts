@@ -36,6 +36,10 @@ export const exerciseDetailsSchema = z
   .object({
     ...listItemFields,
     imageKeys: z.array(z.string()),
+    photoId: z.uuid().nullable().meta({
+      description:
+        'Media id of the own photo, to send back in PUT; null for none',
+    }),
     category: z.enum(EXERCISE_CATEGORIES).nullable(),
     force: z.enum(EXERCISE_FORCES).nullable(),
     mechanic: z.enum(EXERCISE_MECHANICS).nullable(),

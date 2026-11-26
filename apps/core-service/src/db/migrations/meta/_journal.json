@@ -50,6 +50,13 @@
       "when": 1795704169834,
       "tag": "0006_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795725458338,
+      "tag": "0007_media",
+      "breakpoints": true
     }
   ]
 }

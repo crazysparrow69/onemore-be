@@ -21,7 +21,21 @@ describe('exerciseInputSchema', () => {
       secondaryMuscles: [],
       equipment: 'none',
       instructions: [],
+      photoId: null,
     });
+  });
+
+  it('accepts a photo id or null and rejects anything else', () => {
+    const photoId = '0198f1c2-7d3a-7b5e-9c1d-2a4b6c8d0e1f';
+    expect(exerciseInputSchema.parse({ ...valid, photoId }).photoId).toBe(
+      photoId,
+    );
+    expect(
+      exerciseInputSchema.parse({ ...valid, photoId: null }).photoId,
+    ).toBeNull();
+    expect(issuePaths({ ...valid, photoId: 'not-a-uuid' })).toContain(
+      'photoId',
+    );
   });
 
   it('trims the name and squeezes inner whitespace', () => {

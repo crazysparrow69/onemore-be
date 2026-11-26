@@ -29,6 +29,13 @@ export function bestTranslation(locale: Locale, columns: SQL): SQL {
   )`;
 }
 
+export function imageKeysOf(): SQL {
+  return sql`case
+    when e.photo_id is null then e.image_keys
+    else array[(select m.storage_key from core.media_assets m where m.id = e.photo_id)]
+  end`;
+}
+
 export function visibleTo(userId: string): SQL {
   return sql`(e.owner_id is null or e.owner_id = ${userId}) and e.archived_at is null`;
 }

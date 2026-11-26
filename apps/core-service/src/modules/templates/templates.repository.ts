@@ -14,6 +14,7 @@ import {
 } from '../../db/schema/templates';
 import {
   bestTranslation,
+  imageKeysOf,
   lockTypes,
   uuidList,
 } from '../exercises/exercise-sql';
@@ -174,7 +175,7 @@ export class TemplatesRepository {
     }
     const result = await this.db.execute(sql`
       select te.id, te.template_id, te.exercise_id, te.exercise_type as type,
-             te.notes, te.rest_seconds, n.name, e.image_keys,
+             te.notes, te.rest_seconds, n.name, ${imageKeysOf()} as image_keys,
              (e.owner_id is not null) as custom, (e.archived_at is not null) as archived
       from core.template_exercises te
       join core.exercises e on e.id = te.exercise_id

@@ -15,6 +15,7 @@ import {
 } from '../../db/schema/workouts';
 import {
   bestTranslation,
+  imageKeysOf,
   lockTypes,
   uuidList,
 } from '../exercises/exercise-sql';
@@ -198,7 +199,7 @@ export class WorkoutsRepository {
     }
     const result = await this.db.execute(sql`
       select se.id, se.session_id, se.exercise_id, se.exercise_type as type,
-             se.notes, se.rest_seconds, n.name, e.image_keys, (e.owner_id is not null) as custom
+             se.notes, se.rest_seconds, n.name, ${imageKeysOf()} as image_keys, (e.owner_id is not null) as custom
       from core.session_exercises se
       join core.exercises e on e.id = se.exercise_id
       join lateral ${bestTranslation(locale, sql`t.name`)} as n(name) on true

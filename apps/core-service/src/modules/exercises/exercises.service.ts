@@ -4,6 +4,7 @@ import { appError } from '../../common/errors';
 import { uuidV7 } from '../../common/uuid-v7';
 import { toLocale } from '../../db/schema/locales';
 import type { AuthUser } from '../auth/auth.types';
+import { MediaService } from '../media/media.service';
 import { UsersService } from '../users/users.service';
 import {
   buildDictionaries,
@@ -22,7 +23,9 @@ import type {
 import {
   ExercisesRepository,
   type ExerciseDetailsRow,
+  type ExerciseOwnership,
   type ExerciseListRow,
+  type UpdateOutcome,
 } from './exercises.repository';
 import type { ListExercisesQuery } from './list-exercises.schema';
 
@@ -31,6 +34,7 @@ export class ExercisesService {
   constructor(
     private readonly exercises: ExercisesRepository,
     private readonly users: UsersService,
+    private readonly media: MediaService,
   ) {}
 
   async list(
@@ -62,14 +66,24 @@ export class ExercisesService {
   async create(auth: AuthUser, input: ExerciseInput): Promise<ExerciseDetails> {
     const user = await this.users.requireProfile(auth.id);
     const id = uuidV7();
-    const created = await this.exercises.create({
-      id,
-      userId: auth.id,
-      locale: toLocale(user.language),
-      input,
-      limit: MAX_CUSTOM_EXERCISES,
-    });
+    if (input.photoId) {
+      await this.media.claim(auth.id, input.photoId, 'exercise_photo');
+    }
+    let created: boolean;
+    try {
+      created = await this.exercises.create({
+        id,
+        userId: auth.id,
+        locale: toLocale(user.language),
+        input,
+        limit: MAX_CUSTOM_EXERCISES,
+      });
+    } catch (error) {
+      await this.unclaim(auth.id, input.photoId);
+      throw error;
+    }
     if (!created) {
+      await this.unclaim(auth.id, input.photoId);
       throw appError('EXERCISE_LIMIT_REACHED', {
         message: `At most ${MAX_CUSTOM_EXERCISES} own exercises are allowed`,
       });
@@ -82,13 +96,31 @@ export class ExercisesService {
     id: string,
     input: ExerciseInput,
   ): Promise<ExerciseDetails> {
-    await this.requireOwn(auth, id);
-    const result = await this.exercises.update(id, auth.id, input);
-    if (result === 'not_found') {
-      throw appError('EXERCISE_NOT_FOUND');
+    const ownership = await this.requireOwn(auth, id);
+    const claimed =
+      input.photoId !== null && input.photoId !== ownership.photoId
+        ? input.photoId
+        : null;
+    if (claimed) {
+      await this.media.claim(auth.id, claimed, 'exercise_photo');
     }
-    if (result === 'type_locked') {
-      throw appError('EXERCISE_TYPE_LOCKED');
+    let outcome: UpdateOutcome;
+    try {
+      outcome = await this.exercises.update(id, auth.id, input);
+    } catch (error) {
+      await this.unclaim(auth.id, claimed);
+      throw error;
+    }
+    if (outcome.result !== 'updated') {
+      await this.unclaim(auth.id, claimed);
+      throw appError(
+        outcome.result === 'not_found'
+          ? 'EXERCISE_NOT_FOUND'
+          : 'EXERCISE_TYPE_LOCKED',
+      );
+    }
+    if (outcome.replacedPhotoId) {
+      await this.media.release(auth.id, outcome.replacedPhotoId);
     }
     return this.get(auth, id);
   }
@@ -108,7 +140,16 @@ export class ExercisesService {
     return this.exercises.typesVisibleTo(userId, ids);
   }
 
-  private async requireOwn(auth: AuthUser, id: string): Promise<void> {
+  private async unclaim(userId: string, photoId: string | null): Promise<void> {
+    if (photoId) {
+      await this.media.unclaim(userId, photoId);
+    }
+  }
+
+  private async requireOwn(
+    auth: AuthUser,
+    id: string,
+  ): Promise<ExerciseOwnership> {
     const ownership = await this.exercises.findOwnership(id);
     if (!ownership) {
       throw appError('EXERCISE_NOT_FOUND');
@@ -119,6 +160,7 @@ export class ExercisesService {
     if (ownership.ownerId !== auth.id || ownership.archivedAt !== null) {
       throw appError('EXERCISE_NOT_FOUND');
     }
+    return ownership;
   }
 }
 
@@ -146,6 +188,7 @@ function toDetails(row: ExerciseDetailsRow): ExerciseDetails {
     mechanic: row.mechanic,
     level: row.level,
     instructions: row.instructions,
+    photoId: row.photoId,
     typeLocked: row.typeLocked,
   };
 }

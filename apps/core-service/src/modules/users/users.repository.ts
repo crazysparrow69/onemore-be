@@ -1,12 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, getTableColumns, sql } from 'drizzle-orm';
 import { appError } from '../../common/errors';
 import { DB } from '../../db/database.constants';
 import type { Database } from '../../db/database.module';
 import { PG_UNIQUE_VIOLATION, pgErrorOf } from '../../db/pg-error';
+import { mediaAssets } from '../../db/schema/media';
 import { users, type Units } from '../../db/schema/users';
 
-export type UserRecord = typeof users.$inferSelect;
+export type UserRecord = typeof users.$inferSelect & {
+  avatarKey: string | null;
+};
 
 export type UpsertUser = {
   id: string;
@@ -18,7 +21,10 @@ export type UpsertUser = {
 };
 
 export type UserPatch = Partial<
-  Pick<UserRecord, 'name' | 'nickname' | 'language' | 'units' | 'timeZone'>
+  Pick<
+    UserRecord,
+    'name' | 'nickname' | 'language' | 'units' | 'timeZone' | 'avatarId'
+  >
 >;
 
 const EMAIL_UNIQUE = 'users_email_unique';
@@ -30,8 +36,12 @@ export class UsersRepository {
 
   async findById(id: string): Promise<UserRecord | null> {
     const [row] = await this.db
-      .select()
+      .select({
+        ...getTableColumns(users),
+        avatarKey: sql<string | null>`${mediaAssets.storageKey}`,
+      })
       .from(users)
+      .leftJoin(mediaAssets, eq(mediaAssets.id, users.avatarId))
       .where(eq(users.id, id))
       .limit(1);
     return row ?? null;
@@ -47,11 +57,12 @@ export class UsersRepository {
           target: users.id,
           set: { email, language, timeZone, units, updatedAt: new Date() },
         })
-        .returning();
-      if (!row) {
+        .returning({ id: users.id });
+      const saved = row ? await this.findById(row.id) : null;
+      if (!saved) {
         throw new Error('upsert returned no row');
       }
-      return row;
+      return saved;
     } catch (error) {
       throw translateUniqueViolation(error);
     }
@@ -63,8 +74,8 @@ export class UsersRepository {
         .update(users)
         .set(patch)
         .where(eq(users.id, id))
-        .returning();
-      return row ?? null;
+        .returning({ id: users.id });
+      return row ? await this.findById(row.id) : null;
     } catch (error) {
       throw translateUniqueViolation(error);
     }

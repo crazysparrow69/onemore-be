@@ -9,6 +9,7 @@ import { DatabaseModule } from './db/database.module';
 import { HealthModule } from './health/health.module';
 import { createPinoHttpOptions } from './logger/pino-options';
 import { AuthModule } from './modules/auth/auth.module';
+import { MediaModule } from './modules/media/media.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
 import { TemplatesModule } from './modules/templates/templates.module';
 import { UsersModule } from './modules/users/users.module';
@@ -36,6 +37,7 @@ import { WorkoutsModule } from './modules/workouts/workouts.module';
     ExercisesModule,
     WorkoutsModule,
     TemplatesModule,
+    MediaModule,
     AuthModule,
   ],
   providers: [

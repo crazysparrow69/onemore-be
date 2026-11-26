@@ -63,13 +63,13 @@ describe('core schema, role and migrations (real Postgres)', () => {
       runMigrations(coreUrl, migrationsFolder),
     ]);
 
-    expect(await appliedMigrations()).toBe(7);
+    expect(await appliedMigrations()).toBe(8);
   });
 
   it('is idempotent: running again changes nothing', async () => {
     await runMigrations(coreUrl, migrationsFolder);
 
-    expect(await appliedMigrations()).toBe(7);
+    expect(await appliedMigrations()).toBe(8);
   });
 
   it('drops the unused core.accounts table', async () => {
@@ -88,6 +88,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
        order by column_name`,
     );
     expect(result.rows).toEqual([
+      { column_name: 'avatar_id', is_nullable: 'YES', column_default: null },
       { column_name: 'created_at', is_nullable: 'NO', column_default: 'now()' },
       { column_name: 'email', is_nullable: 'NO', column_default: null },
       { column_name: 'id', is_nullable: 'NO', column_default: null },
@@ -504,6 +505,140 @@ describe('core schema, role and migrations (real Postgres)', () => {
       rolsuper: false,
       rolcreaterole: false,
       rolcreatedb: false,
+    });
+  });
+  describe('media', () => {
+    const OWNER = 'user-media';
+    const FIRST = '0198b2c0-0000-7000-8000-0000000000b1';
+    const SECOND = '0198b2c0-0000-7000-8000-0000000000b2';
+
+    async function media(id: string, status = 'ready', version = 1) {
+      await core.query(
+        `insert into core.media_assets (id, owner_id, purpose, storage_key, status, version)
+         values ($1, $2, 'avatar', $3, $4, $5)`,
+        [id, OWNER, `f/u/${OWNER}/avatar/${id}`, status, version],
+      );
+    }
+
+    beforeAll(async () => {
+      await core.query(
+        `insert into core.users (id, email, language, time_zone)
+         values ($1, 'media@example.com', 'en', 'Europe/Kyiv')`,
+        [OWNER],
+      );
+    });
+
+    beforeEach(async () => {
+      await core.query('update core.users set avatar_id = null');
+      await core.query('delete from core.media_assets');
+    });
+
+    it('rejects an unknown purpose and an unknown status', async () => {
+      await expect(
+        core.query(
+          `insert into core.media_assets (id, owner_id, purpose, storage_key, status, version)
+           values (gen_random_uuid(), $1, 'banner', 'k1', 'ready', 1)`,
+          [OWNER],
+        ),
+      ).rejects.toThrow(/media_assets_purpose_check/);
+      await expect(
+        core.query(
+          `insert into core.media_assets (id, owner_id, purpose, storage_key, status, version)
+           values (gen_random_uuid(), $1, 'avatar', 'k2', 'lost', 1)`,
+          [OWNER],
+        ),
+      ).rejects.toThrow(/media_assets_status_check/);
+    });
+
+    it('requires a version once the upload is no longer pending', async () => {
+      await expect(
+        core.query(
+          `insert into core.media_assets (id, owner_id, purpose, storage_key, status)
+           values (gen_random_uuid(), $1, 'avatar', 'k3', 'ready')`,
+          [OWNER],
+        ),
+      ).rejects.toThrow(/media_assets_version_check/);
+      await core.query(
+        `insert into core.media_assets (id, owner_id, purpose, storage_key, status)
+         values (gen_random_uuid(), $1, 'avatar', 'k4', 'pending')`,
+        [OWNER],
+      );
+    });
+
+    it('keeps storage keys unique', async () => {
+      await media(FIRST);
+      await expect(
+        core.query(
+          `insert into core.media_assets (id, owner_id, purpose, storage_key, status, version)
+           values ($1, $2, 'avatar', $3, 'ready', 1)`,
+          [SECOND, OWNER, `f/u/${OWNER}/avatar/${FIRST}`],
+        ),
+      ).rejects.toThrow(/media_assets_storage_key_unique/);
+    });
+
+    it('lets one file be the avatar of one user only', async () => {
+      await media(FIRST);
+      await core.query('update core.users set avatar_id = $1 where id = $2', [
+        FIRST,
+        OWNER,
+      ]);
+      await core.query(
+        `insert into core.users (id, email, language, time_zone)
+         values ('user-media-2', 'media2@example.com', 'en', 'Europe/Kyiv')`,
+      );
+      await expect(
+        core.query(
+          `update core.users set avatar_id = $1 where id = 'user-media-2'`,
+          [FIRST],
+        ),
+      ).rejects.toThrow(/users_avatar_id_unique/);
+      await core.query(`delete from core.users where id = 'user-media-2'`);
+    });
+
+    it('clears the avatar when the file row goes away, and drops files with their owner', async () => {
+      await media(FIRST);
+      await core.query('update core.users set avatar_id = $1 where id = $2', [
+        FIRST,
+        OWNER,
+      ]);
+      await core.query('delete from core.media_assets where id = $1', [FIRST]);
+      const user = await core.query<{ avatar_id: string | null }>(
+        'select avatar_id from core.users where id = $1',
+        [OWNER],
+      );
+      expect(firstRow(user).avatar_id).toBeNull();
+
+      await core.query(
+        `insert into core.users (id, email, language, time_zone)
+         values ('user-media-3', 'media3@example.com', 'en', 'Europe/Kyiv')`,
+      );
+      await core.query(
+        `insert into core.media_assets (id, owner_id, purpose, storage_key, status, version)
+         values ($1, 'user-media-3', 'avatar', 'k5', 'ready', 1)`,
+        [SECOND],
+      );
+      await core.query(`delete from core.users where id = 'user-media-3'`);
+      const left = await core.query<{ n: number }>(
+        'select count(*)::int as n from core.media_assets where id = $1',
+        [SECOND],
+      );
+      expect(firstRow(left).n).toBe(0);
+    });
+
+    it('clears the photo of an exercise when the file row goes away', async () => {
+      await media(FIRST);
+      const created = await core.query<{ id: string }>(
+        `insert into core.exercises (id, owner_id, source, visibility, type, primary_muscles, photo_id)
+         values (gen_random_uuid(), $1, 'user', 'private', 'weight_reps', array['chest'], $2)
+         returning id`,
+        [OWNER, FIRST],
+      );
+      await core.query('delete from core.media_assets where id = $1', [FIRST]);
+      const exercise = await core.query<{ photo_id: string | null }>(
+        'select photo_id from core.exercises where id = $1',
+        [firstRow(created).id],
+      );
+      expect(firstRow(exercise).photo_id).toBeNull();
     });
   });
 });

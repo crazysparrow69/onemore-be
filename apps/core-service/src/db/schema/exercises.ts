@@ -11,6 +11,7 @@ import {
 import { LOCALES, type Locale } from './locales';
 import { timestamps } from './columns';
 import { coreSchema, users } from './users';
+import { mediaAssets } from './media';
 
 export const EXERCISE_TYPES = [
   'weight_reps',
@@ -137,6 +138,9 @@ export const exercises = coreSchema.table(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    photoId: uuid('photo_id')
+      .unique()
+      .references(() => mediaAssets.id, { onDelete: 'set null' }),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     ...timestamps,
   },

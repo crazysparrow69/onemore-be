@@ -25,6 +25,7 @@ export const patchCurrentUserSchema = z
     language: z.enum(LOCALES).optional(),
     units: z.enum(UNITS).optional(),
     timeZone: ianaTimeZone.optional(),
+    avatarId: z.uuid().nullable().optional(),
   })
   .refine(
     (value) =>
