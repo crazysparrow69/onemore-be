@@ -62,13 +62,13 @@ describe('core schema, role and migrations (real Postgres)', () => {
       runMigrations(coreUrl, migrationsFolder),
     ]);
 
-    expect(await appliedMigrations()).toBe(5);
+    expect(await appliedMigrations()).toBe(6);
   });
 
   it('is idempotent: running again changes nothing', async () => {
     await runMigrations(coreUrl, migrationsFolder);
 
-    expect(await appliedMigrations()).toBe(5);
+    expect(await appliedMigrations()).toBe(6);
   });
 
   it('drops the unused core.accounts table', async () => {

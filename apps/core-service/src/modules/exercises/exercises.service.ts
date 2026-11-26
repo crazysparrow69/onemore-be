@@ -99,8 +99,16 @@ export class ExercisesService {
     input: ExerciseInput,
   ): Promise<ExerciseDetails> {
     await this.requireOwn(auth, id);
-    if (!(await this.exercises.update(id, auth.id, input))) {
+    const result = await this.exercises.update(id, auth.id, input);
+    if (result === 'not_found') {
       throw notFound();
+    }
+    if (result === 'type_locked') {
+      throw new AppException(
+        HttpStatus.CONFLICT,
+        'EXERCISE_TYPE_LOCKED',
+        'The type cannot change because the exercise is used in a workout',
+      );
     }
     return this.get(auth, id);
   }
@@ -180,5 +188,6 @@ function toDetails(row: ExerciseDetailsRow): ExerciseDetails {
     mechanic: row.mechanic,
     level: row.level,
     instructions: row.instructions,
+    typeLocked: row.type_locked,
   };
 }

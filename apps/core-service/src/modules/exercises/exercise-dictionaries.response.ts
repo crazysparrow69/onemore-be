@@ -6,6 +6,7 @@ import {
   type ExerciseType,
 } from '../../db/schema/exercises';
 import { DICTIONARIES, MUSCLE_GROUPS } from './dictionaries';
+import { FIELD_REQUIREMENTS, SET_FIELDS, SET_RULES } from './set-rules';
 
 const option = z.object({ id: z.string(), label: z.string() });
 
@@ -20,7 +21,19 @@ export const exerciseDictionariesSchema = z
       }),
     ),
     equipment: z.array(option),
-    types: z.array(option.extend({ example: z.string() })),
+    types: z.array(
+      option.extend({
+        example: z.string(),
+        fields: z.array(
+          z.object({
+            id: z.enum(SET_FIELDS),
+            requirement: z.enum(FIELD_REQUIREMENTS),
+            min: z.number(),
+            max: z.number(),
+          }),
+        ),
+      }),
+    ),
     categories: z.array(option),
     levels: z.array(option),
     forces: z.array(option),
@@ -57,6 +70,7 @@ export function buildDictionaries(locale: Locale): ExerciseDictionaries {
     types: options(dictionary.types).map((type) => ({
       ...type,
       example: dictionary.typeExamples[type.id as ExerciseType],
+      fields: SET_RULES[type.id as ExerciseType].map((rule) => ({ ...rule })),
     })),
     categories: options(dictionary.categories),
     levels: options(dictionary.levels),

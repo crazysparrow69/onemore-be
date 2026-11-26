@@ -83,7 +83,7 @@ export class ExercisesController {
     description: 'The private exercise after a full replacement',
     type: ExerciseDetailsDto,
   })
-  @ApiErrorResponses(400, 401, 403, 404)
+  @ApiErrorResponses(400, 401, 403, 404, 409)
   update(
     @CurrentUser() user: AuthUser,
     @Param() params: ExerciseIdParamsDto,

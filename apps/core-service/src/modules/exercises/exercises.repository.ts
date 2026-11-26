@@ -18,6 +18,7 @@ import {
   type PrimaryMuscle,
 } from '../../db/schema/exercises';
 import type { Locale } from '../../db/schema/locales';
+import { sessionExercises } from '../../db/schema/workouts';
 import type { ExerciseInput } from './exercise-input.schema';
 import { TRANSLATE_FROM, TRANSLATE_TO } from './exercise-text';
 import type { SearchPlan, SearchWord } from './exercise-search';
@@ -60,6 +61,7 @@ const detailsRowSchema = z.object({
   mechanic: z.enum(EXERCISE_MECHANICS).nullable(),
   level: z.enum(EXERCISE_LEVELS).nullable(),
   instructions: z.array(z.string()),
+  type_locked: z.boolean(),
 });
 
 export type NewExercise = {
@@ -69,6 +71,8 @@ export type NewExercise = {
   input: ExerciseInput;
   limit: number;
 };
+
+export type UpdateResult = 'updated' | 'not_found' | 'type_locked';
 
 export type ExerciseOwnership = {
   ownerId: string | null;
@@ -89,7 +93,7 @@ function normalized(column: SQL): SQL {
   return sql`translate(lower(${column}), ${TRANSLATE_FROM}, ${TRANSLATE_TO})`;
 }
 
-function bestTranslation(locale: Locale, columns: SQL): SQL {
+export function bestTranslation(locale: Locale, columns: SQL): SQL {
   return sql`(
     select ${columns}
     from core.exercise_translations t
@@ -185,6 +189,17 @@ function filtersOf(search: ExerciseSearch): SQL {
     : sql`and ${sql.join(conditions, sql` and `)}`;
 }
 
+function isForeignKeyViolation(error: unknown): boolean {
+  let current: unknown = error;
+  while (typeof current === 'object' && current !== null) {
+    if ('code' in current && current.code === '23503') {
+      return true;
+    }
+    current = 'cause' in current ? current.cause : null;
+  }
+  return false;
+}
+
 @Injectable()
 export class ExercisesRepository {
   constructor(@Inject(DB) private readonly db: Database) {}
@@ -250,7 +265,8 @@ export class ExercisesRepository {
       select e.id, n.name, n.instructions, e.type, e.primary_muscles,
              e.secondary_muscles, e.equipment, e.image_keys,
              (e.owner_id is not null) as custom, e.category,
-             e.force, e.mechanic, e.level
+             e.force, e.mechanic, e.level,
+             exists (select 1 from core.session_exercises se where se.exercise_id = e.id) as type_locked
       from core.exercises e
       join lateral ${bestTranslation(locale, sql`t.name, t.instructions`)} as n(name, instructions) on true
       where e.id = ${id} and ${visibleTo(userId)}`;
@@ -314,34 +330,55 @@ export class ExercisesRepository {
     id: string,
     userId: string,
     input: ExerciseInput,
-  ): Promise<boolean> {
-    return this.db.transaction(async (tx) => {
-      const updated = await tx
-        .update(exercises)
-        .set({
-          type: input.type,
-          primaryMuscles: input.primaryMuscles,
-          secondaryMuscles: input.secondaryMuscles,
-          equipment: input.equipment,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(exercises.id, id),
-            eq(exercises.ownerId, userId),
-            isNull(exercises.archivedAt),
-          ),
-        )
-        .returning({ id: exercises.id });
-      if (updated.length === 0) {
-        return false;
+  ): Promise<UpdateResult> {
+    try {
+      return await this.db.transaction(async (tx) => {
+        const [current] = await tx
+          .select({ type: exercises.type })
+          .from(exercises)
+          .where(
+            and(
+              eq(exercises.id, id),
+              eq(exercises.ownerId, userId),
+              isNull(exercises.archivedAt),
+            ),
+          )
+          .for('update');
+        if (!current) {
+          return 'not_found';
+        }
+        if (current.type !== input.type) {
+          const [used] = await tx
+            .select({ id: sessionExercises.id })
+            .from(sessionExercises)
+            .where(eq(sessionExercises.exerciseId, id))
+            .limit(1);
+          if (used) {
+            return 'type_locked';
+          }
+        }
+        await tx
+          .update(exercises)
+          .set({
+            type: input.type,
+            primaryMuscles: input.primaryMuscles,
+            secondaryMuscles: input.secondaryMuscles,
+            equipment: input.equipment,
+            updatedAt: new Date(),
+          })
+          .where(eq(exercises.id, id));
+        await tx
+          .update(exerciseTranslations)
+          .set({ name: input.name, instructions: input.instructions })
+          .where(eq(exerciseTranslations.exerciseId, id));
+        return 'updated';
+      });
+    } catch (error) {
+      if (isForeignKeyViolation(error)) {
+        return 'type_locked';
       }
-      await tx
-        .update(exerciseTranslations)
-        .set({ name: input.name, instructions: input.instructions })
-        .where(eq(exerciseTranslations.exerciseId, id));
-      return true;
-    });
+      throw error;
+    }
   }
 
   async archive(id: string, userId: string): Promise<boolean> {

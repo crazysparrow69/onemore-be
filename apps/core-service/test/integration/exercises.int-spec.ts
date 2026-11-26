@@ -559,6 +559,9 @@ describe('exercise catalog (real Postgres)', () => {
         id: 'duration',
         label: 'Тривалість',
         example: 'Планка, розтяжка',
+        fields: [
+          { id: 'durationS', requirement: 'required', min: 1, max: 86400 },
+        ],
       });
       expect(bodyOf(en).locale).toBe('en');
       expect(bodyOf(en).equipment).toContainEqual({

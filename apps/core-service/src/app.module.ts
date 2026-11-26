@@ -11,6 +11,7 @@ import { createPinoHttpOptions } from './logger/pino-options';
 import { AuthModule } from './modules/auth/auth.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
 import { UsersModule } from './modules/users/users.module';
+import { WorkoutsModule } from './modules/workouts/workouts.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UsersModule } from './modules/users/users.module';
     HealthModule,
     UsersModule,
     ExercisesModule,
+    WorkoutsModule,
     AuthModule,
   ],
   providers: [

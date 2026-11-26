@@ -43,6 +43,10 @@ export const exerciseDetailsSchema = z
     mechanic: z.enum(EXERCISE_MECHANICS).nullable(),
     level: z.enum(EXERCISE_LEVELS).nullable(),
     instructions: z.array(z.string()),
+    typeLocked: z.boolean().meta({
+      description:
+        'true when the exercise is used in a workout, so its type can no longer change',
+    }),
   })
   .meta({ id: 'ExerciseDetails' });
 

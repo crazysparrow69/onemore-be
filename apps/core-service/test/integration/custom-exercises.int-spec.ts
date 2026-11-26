@@ -200,6 +200,7 @@ describe('own exercises (real Postgres)', () => {
         mechanic: null,
         level: null,
         instructions: hammer.instructions,
+        typeLocked: false,
       });
       await wipe('user-a');
     });

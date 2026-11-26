@@ -39,6 +39,8 @@ describe('openapi.json', () => {
       '/api/exercises',
       '/api/exercises/{id}',
       '/api/me',
+      '/api/workouts',
+      '/api/workouts/{id}',
       '/health',
       '/health/ready',
     ]);
@@ -137,6 +139,7 @@ describe('openapi.json', () => {
       '401',
       '403',
       '404',
+      '409',
     ]);
     expect(Object.keys(one?.delete?.responses ?? {}).sort()).toEqual([
       '204',
@@ -164,6 +167,47 @@ describe('openapi.json', () => {
       '401',
       '404',
       '409',
+    ]);
+  });
+
+  it('documents the routes that save, list, read and delete workouts', () => {
+    const workouts = document.paths['/api/workouts'];
+    const one = document.paths['/api/workouts/{id}'];
+
+    for (const operation of [workouts?.get, one?.get, one?.put, one?.delete]) {
+      expect(operation?.security).toEqual([{ bearer: [] }]);
+    }
+    expect(one?.put?.requestBody).toMatchObject({
+      content: {
+        'application/json': {
+          schema: { $ref: '#/components/schemas/WorkoutInput' },
+        },
+      },
+    });
+    expect(Object.keys(workouts?.get?.responses ?? {}).sort()).toEqual([
+      '200',
+      '400',
+      '401',
+    ]);
+    expect(Object.keys(one?.put?.responses ?? {}).sort()).toEqual([
+      '200',
+      '201',
+      '400',
+      '401',
+      '404',
+      '409',
+    ]);
+    expect(Object.keys(one?.get?.responses ?? {}).sort()).toEqual([
+      '200',
+      '400',
+      '401',
+      '404',
+    ]);
+    expect(Object.keys(one?.delete?.responses ?? {}).sort()).toEqual([
+      '204',
+      '400',
+      '401',
+      '404',
     ]);
   });
 });

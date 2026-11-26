@@ -30,3 +30,10 @@ export type {
 } from './exercises';
 export { LOCALES } from './locales';
 export type { Locale } from './locales';
+export {
+  SET_KINDS,
+  sessionExercises,
+  sessionSets,
+  workoutSessions,
+} from './workouts';
+export type { SetKind } from './workouts';
