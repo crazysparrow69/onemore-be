@@ -45,7 +45,7 @@ export const exerciseDetailsSchema = z
     instructions: z.array(z.string()),
     typeLocked: z.boolean().meta({
       description:
-        'true when the exercise is used in a workout, so its type can no longer change',
+        'true when the exercise is used in a workout or a program, so its type can no longer change',
     }),
   })
   .meta({ id: 'ExerciseDetails' });

@@ -4,7 +4,7 @@ import {
   type StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
 import { Pool } from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { runMigrations } from '../../src/db/migrator';
 
 const repoRoot = join(process.cwd(), '..', '..');
@@ -62,13 +62,13 @@ describe('core schema, role and migrations (real Postgres)', () => {
       runMigrations(coreUrl, migrationsFolder),
     ]);
 
-    expect(await appliedMigrations()).toBe(6);
+    expect(await appliedMigrations()).toBe(7);
   });
 
   it('is idempotent: running again changes nothing', async () => {
     await runMigrations(coreUrl, migrationsFolder);
 
-    expect(await appliedMigrations()).toBe(6);
+    expect(await appliedMigrations()).toBe(7);
   });
 
   it('drops the unused core.accounts table', async () => {
@@ -274,6 +274,204 @@ describe('core schema, role and migrations (real Postgres)', () => {
       [id],
     );
     expect(left.rows[0].n).toBe(0);
+  });
+
+  describe('programs (templates)', () => {
+    const OWNER = 'user-tpl';
+    const TEMPLATE = '0198b2c0-0000-7000-8000-0000000000a1';
+    const TEMPLATE_EXERCISE = '0198b2c0-0000-7000-8000-0000000000a2';
+    let weightExercise: string;
+    let plankExercise: string;
+
+    async function exercise(type: string, sourceId: string): Promise<string> {
+      const created = await core.query<{ id: string }>(
+        `insert into core.exercises (id, source, source_id, visibility, type, primary_muscles)
+         values (gen_random_uuid(), 'onemore', $1, 'public', $2, array['chest'])
+         returning id`,
+        [sourceId, type],
+      );
+      return created.rows[0].id;
+    }
+
+    async function exerciseRow(
+      id: string,
+      exerciseId: string,
+      type: string,
+      position = 0,
+    ): Promise<void> {
+      await core.query(
+        `insert into core.template_exercises (id, template_id, exercise_id, exercise_type, position)
+         values ($1, $2, $3, $4, $5)`,
+        [id, TEMPLATE, exerciseId, type, position],
+      );
+    }
+
+    beforeAll(async () => {
+      await core.query(
+        `insert into core.users (id, email, language, time_zone)
+         values ($1, 'tpl@example.com', 'en', 'Europe/Kyiv')`,
+        [OWNER],
+      );
+      weightExercise = await exercise('weight_reps', 'tpl-bench');
+      plankExercise = await exercise('duration', 'tpl-plank');
+    });
+
+    beforeEach(async () => {
+      await core.query('delete from core.templates');
+      await core.query(
+        `insert into core.templates (id, owner_id, name) values ($1, $2, 'Push')`,
+        [TEMPLATE, OWNER],
+      );
+    });
+
+    it('defaults visibility to private and rejects unknown values', async () => {
+      const row = await core.query<{ visibility: string }>(
+        'select visibility from core.templates where id = $1',
+        [TEMPLATE],
+      );
+      expect(row.rows[0]?.visibility).toBe('private');
+
+      await expect(
+        core.query(
+          `insert into core.templates (id, owner_id, name, visibility)
+           values (gen_random_uuid(), $1, 'x', 'secret')`,
+          [OWNER],
+        ),
+      ).rejects.toThrow(/templates_visibility_check/);
+    });
+
+    it('keeps positions unique inside a program', async () => {
+      await exerciseRow(TEMPLATE_EXERCISE, weightExercise, 'weight_reps', 0);
+
+      await expect(
+        core.query(
+          `insert into core.template_exercises (id, template_id, exercise_id, exercise_type, position)
+           values (gen_random_uuid(), $1, $2, 'weight_reps', 0)`,
+          [TEMPLATE, weightExercise],
+        ),
+      ).rejects.toThrow(/template_exercises_template_position_unique/);
+    });
+
+    it('does not accept an exercise type that differs from the exercise', async () => {
+      await expect(
+        exerciseRow(TEMPLATE_EXERCISE, weightExercise, 'duration'),
+      ).rejects.toThrow(/template_exercises_exercise_fk/);
+    });
+
+    it('stops the type of an exercise from changing once a program uses it', async () => {
+      await exerciseRow(TEMPLATE_EXERCISE, weightExercise, 'weight_reps');
+
+      await expect(
+        core.query(
+          `update core.exercises set type = 'duration' where id = $1`,
+          [weightExercise],
+        ),
+      ).rejects.toThrow(/template_exercises_exercise_fk/);
+    });
+
+    it('allows target sets without values but not values the type does not use', async () => {
+      await exerciseRow(TEMPLATE_EXERCISE, weightExercise, 'weight_reps');
+      await core.query(
+        `insert into core.template_sets (id, template_exercise_id, exercise_type, position)
+         values (gen_random_uuid(), $1, 'weight_reps', 0)`,
+        [TEMPLATE_EXERCISE],
+      );
+      await core.query(
+        `insert into core.template_sets (id, template_exercise_id, exercise_type, position, weight_kg, reps)
+         values (gen_random_uuid(), $1, 'weight_reps', 1, 80, 12)`,
+        [TEMPLATE_EXERCISE],
+      );
+
+      await expect(
+        core.query(
+          `insert into core.template_sets (id, template_exercise_id, exercise_type, position, duration_s)
+           values (gen_random_uuid(), $1, 'weight_reps', 2, 60)`,
+          [TEMPLATE_EXERCISE],
+        ),
+      ).rejects.toThrow(/template_sets_shape_check/);
+    });
+
+    it('checks the set shape of a duration exercise', async () => {
+      const id = '0198b2c0-0000-7000-8000-0000000000a3';
+      await exerciseRow(id, plankExercise, 'duration');
+
+      await core.query(
+        `insert into core.template_sets (id, template_exercise_id, exercise_type, position, duration_s)
+         values (gen_random_uuid(), $1, 'duration', 0, 60)`,
+        [id],
+      );
+      await expect(
+        core.query(
+          `insert into core.template_sets (id, template_exercise_id, exercise_type, position, reps)
+           values (gen_random_uuid(), $1, 'duration', 1, 5)`,
+          [id],
+        ),
+      ).rejects.toThrow(/template_sets_shape_check/);
+    });
+
+    it('rejects a set whose type differs from its exercise row', async () => {
+      await exerciseRow(TEMPLATE_EXERCISE, weightExercise, 'weight_reps');
+
+      await expect(
+        core.query(
+          `insert into core.template_sets (id, template_exercise_id, exercise_type, position)
+           values (gen_random_uuid(), $1, 'duration', 0)`,
+          [TEMPLATE_EXERCISE],
+        ),
+      ).rejects.toThrow(/template_sets_template_exercise_fk/);
+    });
+
+    it('deletes exercises and sets together with the program', async () => {
+      await exerciseRow(TEMPLATE_EXERCISE, weightExercise, 'weight_reps');
+      await core.query(
+        `insert into core.template_sets (id, template_exercise_id, exercise_type, position)
+         values (gen_random_uuid(), $1, 'weight_reps', 0)`,
+        [TEMPLATE_EXERCISE],
+      );
+
+      await core.query('delete from core.templates where id = $1', [TEMPLATE]);
+
+      const left = await core.query<{ exercises: number; sets: number }>(
+        `select (select count(*) from core.template_exercises)::int as exercises,
+                (select count(*) from core.template_sets)::int as sets`,
+      );
+      expect(left.rows[0]).toEqual({ exercises: 0, sets: 0 });
+    });
+
+    it('keeps the workout when its program is deleted and clears the link', async () => {
+      const workout = '0198b2c0-0000-7000-8000-0000000000a4';
+      await core.query(
+        `insert into core.workout_sessions
+           (id, owner_id, template_id, name, started_at, ended_at, local_date, time_zone)
+         values ($1, $2, $3, 'Push', now(), now(), current_date, 'Europe/Kyiv')`,
+        [workout, OWNER, TEMPLATE],
+      );
+
+      await core.query('delete from core.templates where id = $1', [TEMPLATE]);
+
+      const row = await core.query<{ template_id: string | null }>(
+        'select template_id from core.workout_sessions where id = $1',
+        [workout],
+      );
+      expect(row.rows).toEqual([{ template_id: null }]);
+      await core.query('delete from core.workout_sessions where id = $1', [
+        workout,
+      ]);
+    });
+
+    it('deletes the programs together with the user', async () => {
+      await core.query('delete from core.users where id = $1', [OWNER]);
+
+      const left = await core.query<{ n: number }>(
+        'select count(*)::int as n from core.templates',
+      );
+      expect(left.rows[0].n).toBe(0);
+      await core.query(
+        `insert into core.users (id, email, language, time_zone)
+         values ($1, 'tpl@example.com', 'en', 'Europe/Kyiv')`,
+        [OWNER],
+      );
+    });
   });
 
   it('core_svc cannot create anything outside its own schema', async () => {

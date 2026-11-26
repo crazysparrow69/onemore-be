@@ -33,7 +33,7 @@ const name = z
   .transform((value) => value.replace(/\s+/g, ' '))
   .default('');
 
-const notes = z
+export const notes = z
   .string()
   .trim()
   .max(MAX_NOTES_LENGTH)
@@ -46,31 +46,35 @@ const notes = z
 
 const instant = z.iso.datetime({ offset: true });
 
+export const setValueShape = {
+  kind: z.enum(SET_KINDS).default('working'),
+  weightKg: z
+    .number()
+    .min(-MAX_WEIGHT_KG)
+    .max(MAX_WEIGHT_KG)
+    .transform((value) => round(value, 3))
+    .nullable()
+    .default(null),
+  reps: z.number().int().min(0).max(MAX_REPS).nullable().default(null),
+  durationS: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_DURATION_S)
+    .nullable()
+    .default(null),
+  distanceM: z
+    .number()
+    .min(0)
+    .max(MAX_DISTANCE_M)
+    .transform((value) => round(value, 2))
+    .nullable()
+    .default(null),
+};
+
 const setSchema = z
   .strictObject({
-    kind: z.enum(SET_KINDS).default('working'),
-    weightKg: z
-      .number()
-      .min(-MAX_WEIGHT_KG)
-      .max(MAX_WEIGHT_KG)
-      .transform((value) => round(value, 3))
-      .nullable()
-      .default(null),
-    reps: z.number().int().min(0).max(MAX_REPS).nullable().default(null),
-    durationS: z
-      .number()
-      .int()
-      .min(0)
-      .max(MAX_DURATION_S)
-      .nullable()
-      .default(null),
-    distanceM: z
-      .number()
-      .min(0)
-      .max(MAX_DISTANCE_M)
-      .transform((value) => round(value, 2))
-      .nullable()
-      .default(null),
+    ...setValueShape,
     completedAt: instant.nullable().default(null),
   })
   .meta({ id: 'WorkoutSetInput' });
@@ -94,6 +98,7 @@ export const workoutInputSchema = z
   .strictObject({
     name,
     notes,
+    templateId: z.uuid().nullable().default(null),
     startedAt: instant,
     endedAt: instant,
     timeZone,

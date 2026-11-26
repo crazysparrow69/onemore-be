@@ -107,7 +107,7 @@ export class ExercisesService {
       throw new AppException(
         HttpStatus.CONFLICT,
         'EXERCISE_TYPE_LOCKED',
-        'The type cannot change because the exercise is used in a workout',
+        'The type cannot change because the exercise is used in a workout or a program',
       );
     }
     return this.get(auth, id);

@@ -109,3 +109,28 @@ export function violationsOf(
   }
   return violations;
 }
+
+export function targetViolationsOf(
+  type: ExerciseType,
+  values: SetValues,
+): SetViolation[] {
+  const rules = SET_RULES[type];
+  const byField = new Map(rules.map((rule) => [rule.id, rule]));
+  const violations: SetViolation[] = [];
+  for (const field of SET_FIELDS) {
+    const value = values[field];
+    if (value === null) {
+      continue;
+    }
+    const rule = byField.get(field);
+    if (!rule) {
+      violations.push({ field, message: 'is not used by this exercise type' });
+    } else if (value < rule.min || value > rule.max) {
+      violations.push({
+        field,
+        message: `must be between ${rule.min} and ${rule.max}`,
+      });
+    }
+  }
+  return violations;
+}

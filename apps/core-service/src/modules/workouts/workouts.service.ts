@@ -127,6 +127,7 @@ export class WorkoutsService {
     const result = await this.workouts.save({
       id,
       ownerId: auth.id,
+      templateId: input.templateId,
       name:
         input.name.length > 0
           ? input.name
@@ -282,6 +283,7 @@ function notFound(): AppException {
 function toBase(session: SessionRow, summary: ReturnType<typeof totalsOf>) {
   return {
     id: session.id,
+    templateId: session.templateId,
     name: session.name,
     notes: session.notes,
     startedAt: session.startedAt.toISOString(),

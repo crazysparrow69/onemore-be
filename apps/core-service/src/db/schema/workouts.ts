@@ -13,6 +13,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { exercises, type ExerciseType } from './exercises';
+import { templates } from './templates';
 import { coreSchema, users } from './users';
 
 export const SET_KINDS = ['warmup', 'working', 'drop', 'failure'] as const;
@@ -31,6 +32,9 @@ export const workoutSessions = coreSchema.table(
     ownerId: text('owner_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    templateId: uuid('template_id').references(() => templates.id, {
+      onDelete: 'set null',
+    }),
     name: text('name').notNull(),
     notes: text('notes'),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
@@ -57,6 +61,10 @@ export const workoutSessions = coreSchema.table(
     index('workout_sessions_owner_local_date_idx').on(
       table.ownerId,
       table.localDate,
+    ),
+    index('workout_sessions_template_idx').on(
+      table.templateId,
+      sql`${table.startedAt} desc`,
     ),
     index('workout_sessions_owner_started_at_idx').on(
       table.ownerId,

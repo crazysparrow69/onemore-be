@@ -9,6 +9,7 @@
     "openapi:generate": "nest build && node dist/openapi/generate.js",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
+    "migrate": "nest build && node --env-file-if-exists=.env dist/migrate.js",
     "seed": "nest build && node --env-file-if-exists=.env dist/seed.js",
     "seed:translations": "nest build && node --env-file-if-exists=.env dist/seed-translations.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

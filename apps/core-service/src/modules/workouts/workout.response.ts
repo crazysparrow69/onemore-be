@@ -41,6 +41,7 @@ const workoutExercise = z
 
 const base = {
   id: z.uuid(),
+  templateId: z.uuid().nullable(),
   name: z.string(),
   notes: z.string().nullable(),
   startedAt: instant,

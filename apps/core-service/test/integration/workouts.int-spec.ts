@@ -249,6 +249,7 @@ describe('workouts (real Postgres)', () => {
       expect(result.status).toBe(201);
       expect(result.body).toEqual({
         id: W1,
+        templateId: null,
         name: 'Груди',
         notes: 'Ліве плече тягне',
         startedAt: at(0),
@@ -837,6 +838,7 @@ describe('workouts (real Postgres)', () => {
       ]);
       expect(page.items[1]).toEqual({
         id: W2,
+        templateId: null,
         name: 'Друге',
         notes: null,
         startedAt: at(0, '2026-11-21'),

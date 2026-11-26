@@ -18,6 +18,7 @@ import {
   type PrimaryMuscle,
 } from '../../db/schema/exercises';
 import type { Locale } from '../../db/schema/locales';
+import { templateExercises } from '../../db/schema/templates';
 import { sessionExercises } from '../../db/schema/workouts';
 import type { ExerciseInput } from './exercise-input.schema';
 import { TRANSLATE_FROM, TRANSLATE_TO } from './exercise-text';
@@ -266,7 +267,7 @@ export class ExercisesRepository {
              e.secondary_muscles, e.equipment, e.image_keys,
              (e.owner_id is not null) as custom, e.category,
              e.force, e.mechanic, e.level,
-             exists (select 1 from core.session_exercises se where se.exercise_id = e.id) as type_locked
+             (exists (select 1 from core.session_exercises se where se.exercise_id = e.id) or exists (select 1 from core.template_exercises te where te.exercise_id = e.id)) as type_locked
       from core.exercises e
       join lateral ${bestTranslation(locale, sql`t.name, t.instructions`)} as n(name, instructions) on true
       where e.id = ${id} and ${visibleTo(userId)}`;
@@ -353,7 +354,12 @@ export class ExercisesRepository {
             .from(sessionExercises)
             .where(eq(sessionExercises.exerciseId, id))
             .limit(1);
-          if (used) {
+          const [planned] = await tx
+            .select({ id: templateExercises.id })
+            .from(templateExercises)
+            .where(eq(templateExercises.exerciseId, id))
+            .limit(1);
+          if (used || planned) {
             return 'type_locked';
           }
         }

@@ -41,6 +41,8 @@ The system exercises come from a snapshot of [free-exercise-db](https://github.c
 - `free-exercise-db.json`: the upstream `dist/exercises.json`, unchanged
 - `overrides.json`: our corrections by source id (`type`, `equipment`, `primaryMuscles`, `secondaryMuscles`, `skip`)
 
+`pnpm migrate` builds the service and applies the pending migrations from `apps/core-service/src/db/migrations` to the database in `DATABASE_URL` (environment or `apps/core-service/.env`). It is the same script as the Cloud Build migrate step, never runs at service startup, and is safe to repeat.
+
 `pnpm seed` builds the service and writes the catalog into `core.exercises` and `core.exercise_translations`. It reads `DATABASE_URL` from the environment or `apps/core-service/.env`, needs the migrations applied first, and runs in one transaction. Rows are upserted by `(source, source_id)` and only changed rows are written, so running it again creates no duplicates. Exercises removed from the seed are left as they are. It is not part of the deploy: run it by hand against the target database after the data changes, for example `DATABASE_URL=... node apps/core-service/dist/seed.js` after `pnpm build`.
 
 The photos live in the web repository (`public/exercises/<source_id in lowercase>/<n>.webp`); the database stores only their keys.
@@ -81,7 +83,7 @@ The production image uses `pnpm deploy --legacy` because pnpm 10 refuses to depl
 ## Layout
 
 ```
-apps/core-service   account, exercises, workouts
+apps/core-service   account, exercises, workouts, templates
 packages/*          shared packages (added later)
 ```
 

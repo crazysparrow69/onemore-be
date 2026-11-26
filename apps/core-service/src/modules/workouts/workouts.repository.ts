@@ -6,6 +6,7 @@ import type { Database } from '../../db/database.module';
 import { EXERCISE_TYPES, exercises } from '../../db/schema/exercises';
 import type { ExerciseType } from '../../db/schema/exercises';
 import type { Locale } from '../../db/schema/locales';
+import { templates } from '../../db/schema/templates';
 import {
   sessionExercises,
   sessionSets,
@@ -36,6 +37,7 @@ export type NewWorkoutExercise = {
 export type NewWorkout = {
   id: string;
   ownerId: string;
+  templateId: string | null;
   name: string;
   notes: string | null;
   startedAt: Date;
@@ -49,6 +51,7 @@ export type SaveResult = 'created' | 'replaced' | 'foreign' | 'stale';
 
 export type SessionRow = {
   id: string;
+  templateId: string | null;
   name: string;
   notes: string | null;
   startedAt: Date;
@@ -111,6 +114,7 @@ const previousRowSchema = z.object({
 
 const sessionColumns = {
   id: workoutSessions.id,
+  templateId: workoutSessions.templateId,
   name: workoutSessions.name,
   notes: workoutSessions.notes,
   startedAt: workoutSessions.startedAt,
@@ -173,7 +177,23 @@ export class WorkoutsRepository {
         return 'foreign';
       }
 
+      let templateId: string | null = null;
+      if (workout.templateId !== null) {
+        const [owned] = await tx
+          .select({ id: templates.id })
+          .from(templates)
+          .where(
+            and(
+              eq(templates.id, workout.templateId),
+              eq(templates.ownerId, workout.ownerId),
+            ),
+          )
+          .limit(1);
+        templateId = owned?.id ?? null;
+      }
+
       const values = {
+        templateId,
         name: workout.name,
         notes: workout.notes,
         startedAt: workout.startedAt,
@@ -252,6 +272,7 @@ export class WorkoutsRepository {
     return {
       rows: rows.map((row) => ({
         id: row.id,
+        templateId: row.templateId,
         name: row.name,
         notes: row.notes,
         startedAt: row.startedAt,

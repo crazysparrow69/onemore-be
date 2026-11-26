@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { EXERCISE_TYPES } from '../../db/schema/exercises';
-import { SET_RULES, violationsOf, type SetValues } from './set-rules';
+import {
+  SET_RULES,
+  targetViolationsOf,
+  violationsOf,
+  type SetValues,
+} from './set-rules';
 
 const empty: SetValues = {
   weightKg: null,
@@ -81,5 +86,47 @@ describe('violationsOf', () => {
     expect(
       violationsOf('bodyweight_reps', fields({ weightKg: -1001, reps: 1 })),
     ).toHaveLength(1);
+  });
+});
+
+describe('targetViolationsOf', () => {
+  const none = { weightKg: null, reps: null, durationS: null, distanceM: null };
+
+  it('accepts empty targets for every type', () => {
+    for (const type of EXERCISE_TYPES) {
+      expect(targetViolationsOf(type, none)).toEqual([]);
+    }
+  });
+
+  it('accepts partial targets that the type uses', () => {
+    expect(targetViolationsOf('weight_reps', { ...none, reps: 12 })).toEqual(
+      [],
+    );
+    expect(
+      targetViolationsOf('distance_duration', { ...none, durationS: 600 }),
+    ).toEqual([]);
+  });
+
+  it('rejects fields the type does not use', () => {
+    expect(
+      targetViolationsOf('duration', { ...none, durationS: 60, reps: 5 }),
+    ).toEqual([
+      { field: 'reps', message: 'is not used by this exercise type' },
+    ]);
+  });
+
+  it('rejects values outside the range', () => {
+    expect(
+      targetViolationsOf('weight_reps', { ...none, weightKg: -1 }),
+    ).toHaveLength(1);
+    expect(
+      targetViolationsOf('duration', { ...none, durationS: 0 }),
+    ).toHaveLength(1);
+  });
+
+  it('allows a negative assistance weight for bodyweight exercises', () => {
+    expect(
+      targetViolationsOf('bodyweight_reps', { ...none, weightKg: -20 }),
+    ).toEqual([]);
   });
 });

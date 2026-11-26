@@ -37,3 +37,4 @@ export {
   workoutSessions,
 } from './workouts';
 export type { SetKind } from './workouts';
+export { templateExercises, templateSets, templates } from './templates';
