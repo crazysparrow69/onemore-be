@@ -1,11 +1,6 @@
 import { sql } from 'drizzle-orm';
-import {
-  check,
-  pgSchema,
-  text,
-  timestamp,
-  uniqueIndex,
-} from 'drizzle-orm/pg-core';
+import { check, pgSchema, text, uniqueIndex } from 'drizzle-orm/pg-core';
+import { timestamps } from './columns';
 
 export const coreSchema = pgSchema('core');
 
@@ -22,16 +17,11 @@ export const users = coreSchema.table(
     email: text('email').notNull().unique(),
     name: text('name'),
     nickname: text('nickname'),
-    role: text('role').notNull().default('user'),
+    role: text('role').$type<UserRole>().notNull().default('user'),
     language: text('language').notNull(),
-    units: text('units').notNull().default('kg'),
+    units: text('units').$type<Units>().notNull().default('kg'),
     timeZone: text('time_zone').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    ...timestamps,
   },
   (table) => [
     check('users_role_check', sql`role in ('user', 'admin')`),

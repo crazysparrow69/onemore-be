@@ -11,6 +11,7 @@ import { loadSeed } from '../../src/seeds/exercises/load-seed';
 import { runTranslationSeed } from '../../src/seeds/translations/import-translations';
 import { buildTranslations } from '../../src/seeds/translations/load-translations';
 import type { SeedExercise } from '../../src/seeds/exercises/map-exercise';
+import { firstRow } from '../support/rows';
 
 const repoRoot = join(process.cwd(), '..', '..');
 
@@ -63,7 +64,7 @@ describe('exercise seed (real Postgres)', () => {
          (select count(*)::int from core.exercises) as exercises,
          (select count(*)::int from core.exercise_translations) as translations`,
     );
-    return result.rows[0];
+    return firstRow(result);
   }
 
   async function snapshot(): Promise<Map<string, string>> {
@@ -192,7 +193,7 @@ describe('exercise seed (real Postgres)', () => {
     const result = await core.query<{ n: number }>(
       `select count(*)::int as n from core.exercises where level = 'expert'`,
     );
-    expect(result.rows[0].n).toBe(
+    expect(firstRow(result).n).toBe(
       seed.filter((exercise) => exercise.level === 'expert').length,
     );
   });
@@ -257,7 +258,7 @@ describe('exercise seed (real Postgres)', () => {
          join core.exercises e on e.id = t.exercise_id
          where e.source_id = 'Pushups' and t.locale = 'en'`,
       );
-      expect(result.rows[0].aliases).toEqual(['press up']);
+      expect(firstRow(result).aliases).toEqual(['press up']);
     });
 
     it('updates exactly the exercise whose alias changed', async () => {

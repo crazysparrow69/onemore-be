@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { exercises, type ExerciseType } from './exercises';
 import { templates } from './templates';
+import { timestamps } from './columns';
 import { coreSchema, users } from './users';
 
 export const SET_KINDS = ['warmup', 'working', 'drop', 'failure'] as const;
@@ -46,12 +47,7 @@ export const workoutSessions = coreSchema.table(
       scale: 3,
       mode: 'number',
     }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    ...timestamps,
   },
   (table) => [
     check(

@@ -1,28 +1,13 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { ianaTimeZone } from '../../common/validation';
 import { LOCALES } from '../../db/schema/locales';
 import { UNITS } from '../../db/schema/users';
-
-export const timeZone = z
-  .string()
-  .min(1)
-  .max(100)
-  .refine(
-    (value) => {
-      try {
-        Intl.DateTimeFormat(undefined, { timeZone: value });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    { message: 'must be a valid IANA time zone' },
-  );
 
 export const updateCurrentUserSchema = z
   .strictObject({
     language: z.enum(LOCALES),
-    timeZone,
+    timeZone: ianaTimeZone,
     units: z.enum(UNITS).optional(),
   })
   .meta({ id: 'UpdateCurrentUser' });

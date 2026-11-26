@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MAX_TEMPLATE_EXERCISES,
-  MAX_TEMPLATE_SETS,
-  templateInputSchema,
-} from './template-input.schema';
+  MAX_EXERCISES_PER_PLAN,
+  MAX_SETS_PER_EXERCISE,
+} from '../exercises/set-input';
+import { templateInputSchema } from './template-input.schema';
 
 const exerciseId = '0198b2c0-0000-7000-8000-000000000001';
 
@@ -102,13 +102,13 @@ describe('templateInputSchema', () => {
   });
 
   it('limits exercises and sets', () => {
-    const many = Array.from({ length: MAX_TEMPLATE_EXERCISES + 1 }, () => ({
+    const many = Array.from({ length: MAX_EXERCISES_PER_PLAN + 1 }, () => ({
       exerciseId,
       sets: [{}],
     }));
     expect(issuePaths({ ...valid, exercises: many })).toContain('exercises');
 
-    const sets = Array.from({ length: MAX_TEMPLATE_SETS + 1 }, () => ({}));
+    const sets = Array.from({ length: MAX_SETS_PER_EXERCISE + 1 }, () => ({}));
     expect(
       issuePaths({ ...valid, exercises: [{ exerciseId, sets }] }),
     ).toContain('exercises.0.sets');

@@ -1,38 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { camelizeKeys } from '../../common/camelize';
 import { DB } from '../../db/database.constants';
 import type { Database } from '../../db/database.module';
-import { EXERCISE_TYPES, exercises } from '../../db/schema/exercises';
-import type { ExerciseType } from '../../db/schema/exercises';
+import { lockXact } from '../../db/locks';
+import { EXERCISE_TYPES } from '../../db/schema/exercises';
 import type { Locale } from '../../db/schema/locales';
 import { templates } from '../../db/schema/templates';
 import {
   sessionExercises,
   sessionSets,
   workoutSessions,
-  type SetKind,
 } from '../../db/schema/workouts';
-import { bestTranslation } from '../exercises/exercises.repository';
+import {
+  bestTranslation,
+  lockTypes,
+  uuidList,
+} from '../exercises/exercise-sql';
+import type { PlannedExercise } from '../exercises/prepare-exercises';
 
-export type NewWorkoutSet = {
-  id: string;
-  kind: SetKind;
-  weightKg: number | null;
-  reps: number | null;
-  durationS: number | null;
-  distanceM: number | null;
-  completedAt: Date;
-};
-
-export type NewWorkoutExercise = {
-  id: string;
-  exerciseId: string;
-  type: ExerciseType;
-  notes: string | null;
-  restSeconds: number | null;
-  sets: NewWorkoutSet[];
-};
+export type NewWorkoutExercise = PlannedExercise<{ completedAt: Date }>;
 
 export type NewWorkout = {
   id: string;
@@ -49,117 +37,59 @@ export type NewWorkout = {
 
 export type SaveResult = 'created' | 'replaced' | 'foreign' | 'stale';
 
-export type SessionRow = {
-  id: string;
-  templateId: string | null;
-  name: string;
-  notes: string | null;
-  startedAt: Date;
-  endedAt: Date;
-  localDate: string;
-  timeZone: string;
-};
+export type SessionRow = typeof workoutSessions.$inferSelect;
 
-export type SessionExerciseRow = {
-  id: string;
-  sessionId: string;
-  exerciseId: string;
-  type: ExerciseType;
-  notes: string | null;
-  restSeconds: number | null;
-  name: string;
-  image: string | null;
-  custom: boolean;
-};
+export type SessionSetRow = Pick<
+  typeof sessionSets.$inferSelect,
+  | 'sessionExerciseId'
+  | 'kind'
+  | 'weightKg'
+  | 'reps'
+  | 'durationS'
+  | 'distanceM'
+  | 'completedAt'
+>;
 
-export type PreviousExerciseRow = {
-  sessionExerciseId: string;
-  exerciseId: string;
-  workoutId: string;
-  startedAt: Date;
-  localDate: string;
-  restSeconds: number | null;
-};
+const exerciseRowSchema = z
+  .object({
+    id: z.uuid(),
+    session_id: z.uuid(),
+    exercise_id: z.uuid(),
+    type: z.enum(EXERCISE_TYPES),
+    notes: z.string().nullable(),
+    rest_seconds: z.number().int().nullable(),
+    name: z.string(),
+    image_keys: z.array(z.string()),
+    custom: z.boolean(),
+  })
+  .transform(camelizeKeys);
 
-export type SessionSetRow = {
-  sessionExerciseId: string;
-  kind: SetKind;
-  weightKg: number | null;
-  reps: number | null;
-  durationS: number | null;
-  distanceM: number | null;
-  completedAt: Date | null;
-};
+const previousRowSchema = z
+  .object({
+    session_exercise_id: z.uuid(),
+    exercise_id: z.uuid(),
+    rest_seconds: z.number().int().nullable(),
+    workout_id: z.uuid(),
+    started_at: z.coerce.date(),
+    local_date: z.string(),
+  })
+  .transform(camelizeKeys);
 
-const exerciseRowSchema = z.object({
-  id: z.uuid(),
-  session_id: z.uuid(),
-  exercise_id: z.uuid(),
-  type: z.enum(EXERCISE_TYPES),
-  notes: z.string().nullable(),
-  rest_seconds: z.number().int().nullable(),
-  name: z.string(),
-  image_keys: z.array(z.string()),
-  custom: z.boolean(),
-});
-
-const previousRowSchema = z.object({
-  id: z.uuid(),
-  exercise_id: z.uuid(),
-  rest_seconds: z.number().int().nullable(),
-  workout_id: z.uuid(),
-  started_at: z.coerce.date(),
-  local_date: z.string(),
-});
-
-const sessionColumns = {
-  id: workoutSessions.id,
-  templateId: workoutSessions.templateId,
-  name: workoutSessions.name,
-  notes: workoutSessions.notes,
-  startedAt: workoutSessions.startedAt,
-  endedAt: workoutSessions.endedAt,
-  localDate: workoutSessions.localDate,
-  timeZone: workoutSessions.timeZone,
-};
+export type SessionExerciseRow = z.output<typeof exerciseRowSchema>;
+export type PreviousExerciseRow = z.output<typeof previousRowSchema>;
 
 @Injectable()
 export class WorkoutsRepository {
   constructor(@Inject(DB) private readonly db: Database) {}
 
-  async exerciseTypes(
-    userId: string,
-    ids: readonly string[],
-  ): Promise<Map<string, ExerciseType>> {
-    if (ids.length === 0) {
-      return new Map();
-    }
-    const rows = await this.db
-      .select({ id: exercises.id, type: exercises.type })
-      .from(exercises)
-      .where(
-        and(
-          inArray(exercises.id, [...ids]),
-          sql`(${exercises.ownerId} is null or ${exercises.ownerId} = ${userId})`,
-        ),
-      );
-    return new Map(rows.map((row) => [row.id, row.type]));
-  }
-
   async save(workout: NewWorkout): Promise<SaveResult> {
     return this.db.transaction(async (tx) => {
-      await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtextextended(${`workout:${workout.id}`}, 0))`,
+      await lockXact(tx, `workout:${workout.id}`);
+
+      const types = await lockTypes(
+        tx,
+        workout.exercises.map((item) => item.exerciseId),
       );
-      const exerciseIds = [
-        ...new Set(workout.exercises.map((item) => item.exerciseId)),
-      ];
-      const current = await tx
-        .select({ id: exercises.id, type: exercises.type })
-        .from(exercises)
-        .where(inArray(exercises.id, exerciseIds))
-        .for('share');
-      const types = new Map(current.map((row) => [row.id, row.type]));
       if (
         workout.exercises.some(
           (item) => types.get(item.exerciseId) !== item.type,
@@ -177,21 +107,11 @@ export class WorkoutsRepository {
         return 'foreign';
       }
 
-      let templateId: string | null = null;
-      if (workout.templateId !== null) {
-        const [owned] = await tx
-          .select({ id: templates.id })
-          .from(templates)
-          .where(
-            and(
-              eq(templates.id, workout.templateId),
-              eq(templates.ownerId, workout.ownerId),
-            ),
-          )
-          .limit(1);
-        templateId = owned?.id ?? null;
-      }
-
+      const templateId = await this.ownedTemplateId(
+        tx,
+        workout.ownerId,
+        workout.templateId,
+      );
       const values = {
         templateId,
         name: workout.name,
@@ -204,7 +124,7 @@ export class WorkoutsRepository {
       if (existing) {
         await tx
           .update(workoutSessions)
-          .set({ ...values, updatedAt: new Date() })
+          .set(values)
           .where(eq(workoutSessions.id, workout.id));
         await tx
           .delete(sessionExercises)
@@ -227,18 +147,12 @@ export class WorkoutsRepository {
         })),
       );
       await tx.insert(sessionSets).values(
-        workout.exercises.flatMap((item) =>
-          item.sets.map((set, position) => ({
-            id: set.id,
-            sessionExerciseId: item.id,
-            exerciseType: item.type,
+        workout.exercises.flatMap(({ id, type, sets }) =>
+          sets.map((set, position) => ({
+            ...set,
+            sessionExerciseId: id,
+            exerciseType: type,
             position,
-            kind: set.kind,
-            weightKg: set.weightKg,
-            reps: set.reps,
-            durationS: set.durationS,
-            distanceM: set.distanceM,
-            completedAt: set.completedAt,
           })),
         ),
       );
@@ -248,7 +162,7 @@ export class WorkoutsRepository {
 
   async findSession(userId: string, id: string): Promise<SessionRow | null> {
     const [row] = await this.db
-      .select(sessionColumns)
+      .select()
       .from(workoutSessions)
       .where(
         and(eq(workoutSessions.id, id), eq(workoutSessions.ownerId, userId)),
@@ -263,25 +177,16 @@ export class WorkoutsRepository {
     limit: number,
   ): Promise<{ rows: SessionRow[]; total: number }> {
     const rows = await this.db
-      .select({ ...sessionColumns, total: sql<number>`count(*) over ()::int` })
+      .select({
+        ...getTableColumns(workoutSessions),
+        total: sql<number>`count(*) over ()::int`,
+      })
       .from(workoutSessions)
       .where(eq(workoutSessions.ownerId, userId))
       .orderBy(desc(workoutSessions.startedAt), desc(workoutSessions.id))
       .limit(limit)
       .offset(offset);
-    return {
-      rows: rows.map((row) => ({
-        id: row.id,
-        templateId: row.templateId,
-        name: row.name,
-        notes: row.notes,
-        startedAt: row.startedAt,
-        endedAt: row.endedAt,
-        localDate: row.localDate,
-        timeZone: row.timeZone,
-      })),
-      total: rows[0]?.total ?? 0,
-    };
+    return { rows, total: rows[0]?.total ?? 0 };
   }
 
   async exercisesOf(
@@ -291,32 +196,15 @@ export class WorkoutsRepository {
     if (sessionIds.length === 0) {
       return [];
     }
-    const ids = sql.join(
-      sessionIds.map((id) => sql`${id}::uuid`),
-      sql`, `,
-    );
     const result = await this.db.execute(sql`
       select se.id, se.session_id, se.exercise_id, se.exercise_type as type,
              se.notes, se.rest_seconds, n.name, e.image_keys, (e.owner_id is not null) as custom
       from core.session_exercises se
       join core.exercises e on e.id = se.exercise_id
       join lateral ${bestTranslation(locale, sql`t.name`)} as n(name) on true
-      where se.session_id in (${ids})
+      where se.session_id in (${uuidList(sessionIds)})
       order by se.session_id, se.position`);
-    return result.rows.map((raw) => {
-      const row = exerciseRowSchema.parse(raw);
-      return {
-        id: row.id,
-        sessionId: row.session_id,
-        exerciseId: row.exercise_id,
-        type: row.type,
-        notes: row.notes,
-        restSeconds: row.rest_seconds,
-        name: row.name,
-        image: row.image_keys[0] ?? null,
-        custom: row.custom,
-      };
-    });
+    return result.rows.map((row) => exerciseRowSchema.parse(row));
   }
 
   async setsOf(
@@ -347,29 +235,15 @@ export class WorkoutsRepository {
     if (exerciseIds.length === 0) {
       return [];
     }
-    const ids = sql.join(
-      exerciseIds.map((id) => sql`${id}::uuid`),
-      sql`, `,
-    );
     const result = await this.db.execute(sql`
       select distinct on (se.exercise_id)
-             se.id, se.exercise_id, se.rest_seconds,
+             se.id as session_exercise_id, se.exercise_id, se.rest_seconds,
              ws.id as workout_id, ws.started_at, ws.local_date
       from core.session_exercises se
       join core.workout_sessions ws on ws.id = se.session_id
-      where ws.owner_id = ${userId} and se.exercise_id in (${ids})
+      where ws.owner_id = ${userId} and se.exercise_id in (${uuidList(exerciseIds)})
       order by se.exercise_id, ws.started_at desc, ws.id desc, se.position desc`);
-    return result.rows.map((raw) => {
-      const row = previousRowSchema.parse(raw);
-      return {
-        sessionExerciseId: row.id,
-        exerciseId: row.exercise_id,
-        workoutId: row.workout_id,
-        startedAt: row.started_at,
-        localDate: row.local_date,
-        restSeconds: row.rest_seconds,
-      };
-    });
+    return result.rows.map((row) => previousRowSchema.parse(row));
   }
 
   async remove(userId: string, id: string): Promise<boolean> {
@@ -380,5 +254,21 @@ export class WorkoutsRepository {
       )
       .returning({ id: workoutSessions.id });
     return removed.length > 0;
+  }
+
+  private async ownedTemplateId(
+    tx: Pick<Database, 'select'>,
+    ownerId: string,
+    templateId: string | null,
+  ): Promise<string | null> {
+    if (templateId === null) {
+      return null;
+    }
+    const [owned] = await tx
+      .select({ id: templates.id })
+      .from(templates)
+      .where(and(eq(templates.id, templateId), eq(templates.ownerId, ownerId)))
+      .limit(1);
+    return owned?.id ?? null;
   }
 }

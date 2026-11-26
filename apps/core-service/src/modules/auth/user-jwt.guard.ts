@@ -1,14 +1,15 @@
 import {
   type CanActivate,
   type ExecutionContext,
-  HttpStatus,
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AppException } from '../../common/app.exception';
+import { appError } from '../../common/errors';
 import { IS_PUBLIC_KEY } from './auth.constants';
-import type { AuthUser } from './auth.types';
+import type { AuthRequest } from './auth.types';
 import { JwtVerifierService } from './jwt-verifier.service';
+
+const BEARER_PREFIX = 'Bearer ';
 
 @Injectable()
 export class UserJwtGuard implements CanActivate {
@@ -26,18 +27,10 @@ export class UserJwtGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<{
-      user?: AuthUser;
-      header(name: string): string | undefined;
-    }>();
-    const header = request.header('authorization');
-    const token = bearerToken(header);
+    const request = context.switchToHttp().getRequest<AuthRequest>();
+    const token = bearerToken(request.header('authorization'));
     if (!token) {
-      throw new AppException(
-        HttpStatus.UNAUTHORIZED,
-        'UNAUTHORIZED',
-        'Unauthorized',
-      );
+      throw appError('UNAUTHORIZED');
     }
     request.user = await this.verifier.verify(token);
     return true;
@@ -45,9 +38,8 @@ export class UserJwtGuard implements CanActivate {
 }
 
 function bearerToken(header: string | undefined): string | undefined {
-  if (!header?.startsWith('Bearer ')) {
+  if (!header?.startsWith(BEARER_PREFIX)) {
     return undefined;
   }
-  const token = header.slice('Bearer '.length).trim();
-  return token.length > 0 ? token : undefined;
+  return header.slice(BEARER_PREFIX.length).trim() || undefined;
 }

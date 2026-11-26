@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_EXERCISES_PER_PLAN,
   MAX_REST_SECONDS,
   MAX_SETS_PER_EXERCISE,
-  MAX_WORKOUT_EXERCISES,
   MIN_REST_SECONDS,
+} from '../exercises/set-input';
+import {
   previousSetsQuerySchema,
   workoutInputSchema,
 } from './workout-input.schema';
@@ -133,10 +135,13 @@ describe('workoutInputSchema', () => {
   });
 
   it('limits exercises and sets', () => {
-    const exercises = Array.from({ length: MAX_WORKOUT_EXERCISES + 1 }, () => ({
-      exerciseId,
-      sets: [],
-    }));
+    const exercises = Array.from(
+      { length: MAX_EXERCISES_PER_PLAN + 1 },
+      () => ({
+        exerciseId,
+        sets: [],
+      }),
+    );
     expect(issuePaths({ ...valid, exercises })).toContain('exercises');
 
     const sets = Array.from({ length: MAX_SETS_PER_EXERCISE + 1 }, () => ({}));
@@ -187,7 +192,7 @@ describe('previousSetsQuerySchema', () => {
 
   it('rejects more ids than a workout can hold', () => {
     const ids = Array.from(
-      { length: MAX_WORKOUT_EXERCISES + 1 },
+      { length: MAX_EXERCISES_PER_PLAN + 1 },
       (_, index) =>
         `0198b2c0-0000-7000-8000-${String(index).padStart(12, '0')}`,
     );

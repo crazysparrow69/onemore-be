@@ -53,7 +53,7 @@ export async function createTestJwt(): Promise<TestJwt> {
     } else {
       jwt.setExpirationTime(input.expiresAt);
     }
-    return jwt.sign(input.key === undefined ? privateKey : input.key);
+    return jwt.sign(input.key ?? privateKey);
   }
 
   return {

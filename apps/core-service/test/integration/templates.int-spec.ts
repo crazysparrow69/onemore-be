@@ -17,6 +17,7 @@ import {
   TEST_AUTH_URL,
   type TestJwt,
 } from '../support/jwt-fixture';
+import { firstRow } from '../support/rows';
 
 const repoRoot = join(process.cwd(), '..', '..');
 
@@ -229,7 +230,7 @@ describe('programs (real Postgres)', () => {
               (select count(*) from core.template_exercises)::int as exercises,
               (select count(*) from core.template_sets)::int as sets`,
     );
-    return result.rows[0];
+    return firstRow(result);
   }
 
   describe('authentication', () => {
@@ -383,9 +384,9 @@ describe('programs (real Postgres)', () => {
         'select created_at, updated_at from core.templates where id = $1',
         [T1],
       );
-      expect(after.rows[0].created_at).toEqual(created.rows[0].created_at);
-      expect(after.rows[0].updated_at.getTime()).toBeGreaterThan(
-        created.rows[0].created_at.getTime(),
+      expect(firstRow(after).created_at).toEqual(firstRow(created).created_at);
+      expect(firstRow(after).updated_at.getTime()).toBeGreaterThan(
+        firstRow(created).created_at.getTime(),
       );
     });
 
@@ -484,7 +485,7 @@ describe('programs (real Postgres)', () => {
         'select name from core.templates where id = $1',
         [T1],
       );
-      expect(name.rows[0].name).toBe('Ноги і плечі');
+      expect(firstRow(name).name).toBe('Ноги і плечі');
     });
 
     it('does not bring an archived program back', async () => {

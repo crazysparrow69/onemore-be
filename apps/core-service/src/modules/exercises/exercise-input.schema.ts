@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { cleanText, MAX_NAME_LENGTH } from '../../common/validation';
 import {
   EQUIPMENT,
   EXERCISE_TYPES,
@@ -13,17 +14,7 @@ export const MAX_PRIMARY_MUSCLES = 3;
 export const MAX_INSTRUCTION_STEPS = 20;
 export const MAX_STEP_LENGTH = 500;
 
-const CONTROL_CHARACTER = /(?![\t\n\r\f\v])\p{Cc}/u;
-
-const name = z
-  .string()
-  .trim()
-  .min(2)
-  .max(80)
-  .refine((value) => !CONTROL_CHARACTER.test(value), {
-    message: 'must not contain control characters',
-  })
-  .transform((value) => value.replace(/\s+/g, ' '));
+const name = cleanText({ min: 2, max: MAX_NAME_LENGTH });
 
 const instructions = z
   .array(z.string().trim().max(MAX_STEP_LENGTH))

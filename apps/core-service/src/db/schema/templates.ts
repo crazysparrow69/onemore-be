@@ -12,6 +12,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { exercises, VISIBILITIES, type ExerciseType } from './exercises';
+import { timestamps } from './columns';
 import { coreSchema, users } from './users';
 import { SET_KINDS, type SetKind } from './workouts';
 
@@ -35,12 +36,7 @@ export const templates = coreSchema.table(
       .notNull()
       .default('private'),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    ...timestamps,
   },
   (table) => [
     check('templates_visibility_check', oneOf('visibility', VISIBILITIES)),

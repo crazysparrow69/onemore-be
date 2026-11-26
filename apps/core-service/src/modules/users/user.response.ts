@@ -1,13 +1,6 @@
-import { HttpStatus } from '@nestjs/common';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { AppException } from '../../common/app.exception';
-import {
-  UNITS,
-  USER_ROLES,
-  type Units,
-  type UserRole,
-} from '../../db/schema/users';
+import { UNITS, USER_ROLES } from '../../db/schema/users';
 import type { AuthUser } from '../auth/auth.types';
 import type { UserRecord } from './users.repository';
 
@@ -35,32 +28,10 @@ export function toUserResponse(row: UserRecord, auth: AuthUser): UserResponse {
     email: auth.email,
     name: row.name ?? auth.name,
     nickname: row.nickname,
-    role: assertRole(row.role),
+    role: row.role,
     language: row.language,
-    units: assertUnits(row.units),
+    units: row.units,
     timeZone: row.timeZone,
     createdAt: row.createdAt.toISOString(),
   };
-}
-
-function assertRole(role: string): UserRole {
-  if (role === 'user' || role === 'admin') {
-    return role;
-  }
-  throw new AppException(
-    HttpStatus.INTERNAL_SERVER_ERROR,
-    'INTERNAL_ERROR',
-    'Internal server error',
-  );
-}
-
-function assertUnits(units: string): Units {
-  if (units === 'kg' || units === 'lb') {
-    return units;
-  }
-  throw new AppException(
-    HttpStatus.INTERNAL_SERVER_ERROR,
-    'INTERNAL_ERROR',
-    'Internal server error',
-  );
 }

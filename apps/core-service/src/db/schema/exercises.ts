@@ -9,6 +9,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { LOCALES, type Locale } from './locales';
+import { timestamps } from './columns';
 import { coreSchema, users } from './users';
 
 export const EXERCISE_TYPES = [
@@ -137,12 +138,7 @@ export const exercises = coreSchema.table(
       .notNull()
       .default(sql`'{}'::text[]`),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    ...timestamps,
   },
   (table) => [
     unique('exercises_source_source_id_unique').on(

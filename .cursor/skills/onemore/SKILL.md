@@ -78,7 +78,9 @@ Rule details and rationale: [reference/data-and-db.md](reference/data-and-db.md)
 
 ## 4. Conventions
 
-- Layers: `controller -> service -> repository`. One repository per entity (no generic `AbstractRepository`). Controllers contain no business logic and no DB calls.
+- Layers: `controller -> service -> repository`. One repository per entity (no generic `AbstractRepository`). Controllers contain no business logic and no DB calls. A repository is private to its module: other modules go through its service (ESLint `no-restricted-imports`).
+- Errors: throw `appError(code)` from `common/errors.ts` (the catalog holds status and default message); never inline `new AppException(...)`. Postgres errors are read with `pgErrorOf`, advisory locks taken with `lockXact`. Shared helpers: `common/validation.ts` (zod primitives keep `.meta({ id })`), `common/pagination.ts`, `common/upsert-response.ts`, `modules/exercises/prepare-exercises.ts` (shared by workouts and templates).
+- Logs: nestjs-pino request logs carry `userId` and `errorCode` (`logger/request-log.ts`); 4xx log as warn, 5xx as error.
 - Env of every service is validated at startup by a Zod schema via `ConfigModule.forRoot({ isGlobal: true, validate })` (`@nestjs/config`). Every variable is required: NO `.default()` in env schemas, startup must fail on a missing or invalid value. Keys must match `.env.example`. Read config through `ConfigService`, never `process.env`.
 - Drizzle `schemaFilter` excludes `neon_auth`; own migrations table per schema (`migrationsSchema`).
 - Pure business logic (Mifflin-St Jeor, 1RM, unit conversion) lives in `packages/domain`, no framework imports, unit-tested.

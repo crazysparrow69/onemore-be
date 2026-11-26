@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { pageResponse } from '../../common/response';
 import {
   EQUIPMENT,
   EXERCISE_CATEGORIES,
@@ -26,13 +27,10 @@ export const exerciseListItemSchema = z
   .object(listItemFields)
   .meta({ id: 'ExerciseListItem' });
 
-export const exerciseListResponseSchema = z
-  .object({
-    items: z.array(exerciseListItemSchema),
-    total: z.number().int(),
-    nextOffset: z.number().int().nullable(),
-  })
-  .meta({ id: 'ExerciseListResponse' });
+export const exerciseListResponseSchema = pageResponse(
+  exerciseListItemSchema,
+  'ExerciseListResponse',
+);
 
 export const exerciseDetailsSchema = z
   .object({

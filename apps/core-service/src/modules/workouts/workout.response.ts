@@ -1,9 +1,12 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { EXERCISE_TYPES } from '../../db/schema/exercises';
-import { SET_KINDS } from '../../db/schema/workouts';
-
-const instant = z.string().meta({ format: 'date-time' });
+import {
+  dateResponse,
+  instantResponse,
+  pageResponse,
+} from '../../common/response';
+import { setValuesResponse } from '../exercises/set.response';
 
 const summary = z
   .object({
@@ -15,14 +18,7 @@ const summary = z
   .meta({ id: 'WorkoutTotals' });
 
 const workoutSet = z
-  .object({
-    kind: z.enum(SET_KINDS),
-    weightKg: z.number().nullable(),
-    reps: z.number().int().nullable(),
-    durationS: z.number().int().nullable(),
-    distanceM: z.number().nullable(),
-    completedAt: instant.nullable(),
-  })
+  .object({ ...setValuesResponse, completedAt: instantResponse.nullable() })
   .meta({ id: 'WorkoutSet' });
 
 const workoutExercise = z
@@ -44,9 +40,9 @@ const base = {
   templateId: z.uuid().nullable(),
   name: z.string(),
   notes: z.string().nullable(),
-  startedAt: instant,
-  endedAt: instant,
-  localDate: z.string().meta({ format: 'date' }),
+  startedAt: instantResponse,
+  endedAt: instantResponse,
+  localDate: dateResponse,
   timeZone: z.string(),
   summary,
 };
@@ -69,23 +65,12 @@ export const workoutListItemSchema = z
   })
   .meta({ id: 'WorkoutSummary' });
 
-export const workoutListResponseSchema = z
-  .object({
-    items: z.array(workoutListItemSchema),
-    total: z.number().int(),
-    nextOffset: z.number().int().nullable(),
-  })
-  .meta({ id: 'WorkoutListResponse' });
+export const workoutListResponseSchema = pageResponse(
+  workoutListItemSchema,
+  'WorkoutListResponse',
+);
 
-const previousSet = z
-  .object({
-    kind: z.enum(SET_KINDS),
-    weightKg: z.number().nullable(),
-    reps: z.number().int().nullable(),
-    durationS: z.number().int().nullable(),
-    distanceM: z.number().nullable(),
-  })
-  .meta({ id: 'PreviousSet' });
+const previousSet = z.object(setValuesResponse).meta({ id: 'PreviousSet' });
 
 export const previousSetsResponseSchema = z
   .object({
@@ -94,8 +79,8 @@ export const previousSetsResponseSchema = z
         .object({
           exerciseId: z.uuid(),
           workoutId: z.uuid(),
-          startedAt: instant,
-          localDate: z.string().meta({ format: 'date' }),
+          startedAt: instantResponse,
+          localDate: dateResponse,
           restSeconds: z.number().int().nullable(),
           sets: z.array(previousSet),
         })

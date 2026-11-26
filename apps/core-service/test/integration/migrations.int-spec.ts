@@ -6,6 +6,7 @@ import {
 import { Pool } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { runMigrations } from '../../src/db/migrator';
+import { firstRow } from '../support/rows';
 
 const repoRoot = join(process.cwd(), '..', '..');
 const migrationsFolder = join(process.cwd(), 'src', 'db', 'migrations');
@@ -47,7 +48,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
     const journal = await core.query<{ n: number }>(
       'select count(*)::int as n from core.__drizzle_migrations',
     );
-    return journal.rows[0].n;
+    return firstRow(journal).n;
   }
 
   afterAll(async () => {
@@ -116,7 +117,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
     const inserted = await core.query<{ role: string }>(
       `select role from core.users where id = 'user-a'`,
     );
-    expect(inserted.rows[0]?.role).toBe('user');
+    expect(firstRow(inserted)?.role).toBe('user');
 
     await expect(
       core.query(
@@ -141,7 +142,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
     const inserted = await core.query<{ units: string }>(
       `select units from core.users where id = 'user-u1'`,
     );
-    expect(inserted.rows[0]?.units).toBe('kg');
+    expect(firstRow(inserted)?.units).toBe('kg');
 
     await expect(
       core.query(
@@ -253,7 +254,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
        values (gen_random_uuid(), 'onemore', 'Burpee', 'public', 'bodyweight_reps', array['full_body'])
        returning id`,
     );
-    const id = created.rows[0].id;
+    const id = firstRow(created).id;
 
     await core.query(
       `insert into core.exercise_translations (exercise_id, locale, name)
@@ -273,7 +274,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
       'select count(*)::int as n from core.exercise_translations where exercise_id = $1',
       [id],
     );
-    expect(left.rows[0].n).toBe(0);
+    expect(firstRow(left).n).toBe(0);
   });
 
   describe('programs (templates)', () => {
@@ -290,7 +291,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
          returning id`,
         [sourceId, type],
       );
-      return created.rows[0].id;
+      return firstRow(created).id;
     }
 
     async function exerciseRow(
@@ -329,7 +330,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
         'select visibility from core.templates where id = $1',
         [TEMPLATE],
       );
-      expect(row.rows[0]?.visibility).toBe('private');
+      expect(firstRow(row)?.visibility).toBe('private');
 
       await expect(
         core.query(
@@ -435,7 +436,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
         `select (select count(*) from core.template_exercises)::int as exercises,
                 (select count(*) from core.template_sets)::int as sets`,
       );
-      expect(left.rows[0]).toEqual({ exercises: 0, sets: 0 });
+      expect(firstRow(left)).toEqual({ exercises: 0, sets: 0 });
     });
 
     it('keeps the workout when its program is deleted and clears the link', async () => {
@@ -465,7 +466,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
       const left = await core.query<{ n: number }>(
         'select count(*)::int as n from core.templates',
       );
-      expect(left.rows[0].n).toBe(0);
+      expect(firstRow(left).n).toBe(0);
       await core.query(
         `insert into core.users (id, email, language, time_zone)
          values ($1, 'tpl@example.com', 'en', 'Europe/Kyiv')`,
@@ -499,7 +500,7 @@ describe('core schema, role and migrations (real Postgres)', () => {
       `select rolsuper, rolcreaterole, rolcreatedb from pg_roles
        where rolname = current_user`,
     );
-    expect(result.rows[0]).toEqual({
+    expect(firstRow(result)).toEqual({
       rolsuper: false,
       rolcreaterole: false,
       rolcreatedb: false,

@@ -1,23 +1,36 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { appError } from '../../common/errors';
+import { toLocale, type Locale } from '../../db/schema/locales';
 import type { AuthUser } from '../auth/auth.types';
-import { AppException } from '../../common/app.exception';
-import { toUserResponse, type UserResponse } from './user.response';
 import type { PatchCurrentUser } from './patch-current-user.schema';
 import type { UpdateCurrentUser } from './update-current-user.schema';
-import { UsersRepository } from './users.repository';
+import { toUserResponse, type UserResponse } from './user.response';
+import { UsersRepository, type UserRecord } from './users.repository';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly users: UsersRepository) {}
 
+  findById(id: string): Promise<UserRecord | null> {
+    return this.users.findById(id);
+  }
+
+  async requireProfile(id: string): Promise<UserRecord> {
+    const user = await this.users.findById(id);
+    if (!user) {
+      throw appError('PROFILE_REQUIRED');
+    }
+    return user;
+  }
+
+  async localeOf(id: string): Promise<Locale> {
+    return toLocale((await this.users.findById(id))?.language);
+  }
+
   async getCurrentUser(auth: AuthUser): Promise<UserResponse> {
     const row = await this.users.findById(auth.id);
     if (!row) {
-      throw new AppException(
-        HttpStatus.NOT_FOUND,
-        'USER_NOT_FOUND',
-        'User not found',
-      );
+      throw appError('USER_NOT_FOUND');
     }
     return toUserResponse(row, auth);
   }
@@ -30,9 +43,7 @@ export class UsersService {
       id: auth.id,
       email: auth.email,
       name: auth.name,
-      language: input.language,
-      timeZone: input.timeZone,
-      units: input.units,
+      ...input,
     });
     return toUserResponse(row, auth);
   }
@@ -41,20 +52,10 @@ export class UsersService {
     auth: AuthUser,
     input: PatchCurrentUser,
   ): Promise<UserResponse> {
-    const row = await this.users.update(auth.id, definedFields(input));
+    const row = await this.users.update(auth.id, input);
     if (!row) {
-      throw new AppException(
-        HttpStatus.NOT_FOUND,
-        'USER_NOT_FOUND',
-        'User not found',
-      );
+      throw appError('USER_NOT_FOUND');
     }
     return toUserResponse(row, auth);
   }
-}
-
-function definedFields(input: PatchCurrentUser): PatchCurrentUser {
-  return Object.fromEntries(
-    Object.entries(input).filter(([, value]) => value !== undefined),
-  );
 }

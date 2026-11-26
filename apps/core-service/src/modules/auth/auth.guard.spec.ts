@@ -13,7 +13,8 @@ import {
   TEST_AUTH_URL,
   type TestJwt,
 } from '../../../test/support/jwt-fixture';
-import { UsersRepository, type UserRecord } from '../users/users.repository';
+import type { UserRecord } from '../users/users.repository';
+import { UsersService } from '../users/users.service';
 import { JWKS } from './auth.constants';
 import { CurrentUser, Public, Roles } from './auth.decorators';
 import type { AuthUser } from './auth.types';
@@ -83,11 +84,11 @@ describe('auth guards', () => {
               if (key === 'NEON_AUTH_URL') {
                 return TEST_AUTH_URL;
               }
-              throw new Error(`unexpected config key: ${String(key)}`);
+              throw new Error(`unexpected config key: ${key}`);
             },
           },
         },
-        { provide: UsersRepository, useValue: { findById } },
+        { provide: UsersService, useValue: { findById } },
         { provide: APP_GUARD, useExisting: UserJwtGuard },
         { provide: APP_GUARD, useExisting: RolesGuard },
         { provide: APP_FILTER, useClass: AllExceptionsFilter },

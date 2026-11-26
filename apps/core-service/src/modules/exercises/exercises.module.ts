@@ -9,5 +9,6 @@ import { ExercisesService } from './exercises.service';
   imports: [UsersModule],
   controllers: [ExercisesController, ExerciseDictionariesController],
   providers: [ExercisesService, ExercisesRepository],
+  exports: [ExercisesService],
 })
 export class ExercisesModule {}

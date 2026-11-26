@@ -1,6 +1,7 @@
 import type { DestinationStream } from 'pino';
 import type { Options } from 'pino-http';
 import type { Env } from '../config/env';
+import { logLevelOf, requestProps } from './request-log';
 
 type LoggerEnv = Pick<Env, 'NODE_ENV' | 'LOG_LEVEL' | 'APP_VERSION'>;
 
@@ -29,6 +30,8 @@ export async function createPinoHttpOptions(
         return { severity: severityByLevel[label] ?? 'DEFAULT' };
       },
     },
+    customLogLevel: logLevelOf,
+    customProps: requestProps,
     autoLogging: {
       ignore: (req) => req.url?.split('?')[0] === '/health',
     },

@@ -14,6 +14,10 @@ import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ZodResponse } from 'nestjs-zod';
 import { ApiErrorResponses } from '../../common/api-error-responses.decorator';
+import {
+  ApiUpsertResponse,
+  setUpsertStatus,
+} from '../../common/upsert-response';
 import { CurrentUser } from '../auth/auth.decorators';
 import type { AuthUser } from '../auth/auth.types';
 import {
@@ -39,15 +43,9 @@ export class WorkoutsController {
   constructor(private readonly workouts: WorkoutsService) {}
 
   @Put(':id')
-  @ZodResponse({
-    status: 200,
-    description: 'The workout was replaced with the same id',
-    type: WorkoutDetailsDto,
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'The workout was created',
-    type: WorkoutDetailsDto,
+  @ApiUpsertResponse(WorkoutDetailsDto, {
+    replaced: 'The workout was replaced with the same id',
+    created: 'The workout was created',
   })
   @ApiErrorResponses(400, 401, 404, 409)
   async save(
@@ -61,7 +59,7 @@ export class WorkoutsController {
       params.id,
       body,
     );
-    response.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+    setUpsertStatus(response, created);
     return workout;
   }
 

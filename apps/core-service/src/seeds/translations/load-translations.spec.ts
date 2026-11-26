@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { loadSeed } from '../exercises/load-seed';
+import type { SeedExercise } from '../exercises/map-exercise';
 import { buildTranslations } from './load-translations';
 
 describe('buildTranslations', () => {
   const seed = loadSeed().slice(0, 3);
+  const [first, second, third] = seed as [
+    SeedExercise,
+    SeedExercise,
+    SeedExercise,
+  ];
 
   function ukFor(
     patch: (id: string, index: number) => Record<string, unknown> = () => ({}),
@@ -26,7 +32,7 @@ describe('buildTranslations', () => {
 
     expect(rows).toHaveLength(3);
     expect(rows[0]).toMatchObject({
-      exerciseId: seed[0].id,
+      exerciseId: first.id,
       locale: 'uk',
       name: 'Назва 0',
       aliases: ['синонім'],
@@ -35,13 +41,13 @@ describe('buildTranslations', () => {
 
   it('accepts aliases only for the base locale and does not require every exercise', () => {
     const rows = buildTranslations(
-      { en: { [seed[1].sourceId]: { aliases: ['bench'] } } },
+      { en: { [second.sourceId]: { aliases: ['bench'] } } },
       seed,
     );
 
     expect(rows).toEqual([
       {
-        exerciseId: seed[1].id,
+        exerciseId: second.id,
         locale: 'en',
         name: null,
         instructions: null,
@@ -70,8 +76,9 @@ describe('buildTranslations', () => {
   });
 
   it('fails when an exercise is not translated', () => {
-    const files = ukFor();
-    delete files[seed[2].sourceId];
+    const files = Object.fromEntries(
+      Object.entries(ukFor()).filter(([id]) => id !== third.sourceId),
+    );
 
     expect(() => buildTranslations({ uk: files }, seed)).toThrow(
       /1 exercises have no translation/,

@@ -31,13 +31,13 @@ export async function importTranslations(
   const changed = new Set<string>();
 
   for (const batch of chunks(rows, BATCH_SIZE)) {
-    const full = batch.filter((row) => row.name !== null);
+    const full = batch.filter(isFull);
     if (full.length > 0) {
       for (const result of await upsertFull(db, full)) {
         (result.inserted ? inserted : changed).add(key(result));
       }
     }
-    const aliasesOnly = batch.filter((row) => row.name === null);
+    const aliasesOnly = batch.filter((row) => !isFull(row));
     if (aliasesOnly.length > 0) {
       for (const result of await updateAliases(db, aliasesOnly)) {
         changed.add(key(result));
@@ -63,6 +63,12 @@ export async function importTranslations(
   };
 }
 
+type FullRow = TranslationRow & { name: string; instructions: string[] };
+
+function isFull(row: TranslationRow): row is FullRow {
+  return row.name !== null && row.instructions !== null;
+}
+
 type Touched = { exerciseId: string; locale: string; inserted: boolean };
 
 function key(row: { exerciseId: string; locale: string }): string {
@@ -71,7 +77,7 @@ function key(row: { exerciseId: string; locale: string }): string {
 
 async function upsertFull(
   db: NodePgDatabase,
-  batch: TranslationRow[],
+  batch: FullRow[],
 ): Promise<Touched[]> {
   return db
     .insert(exerciseTranslations)
@@ -79,8 +85,8 @@ async function upsertFull(
       batch.map((row) => ({
         exerciseId: row.exerciseId,
         locale: row.locale,
-        name: row.name as string,
-        instructions: row.instructions as string[],
+        name: row.name,
+        instructions: row.instructions,
         aliases: row.aliases,
       })),
     )

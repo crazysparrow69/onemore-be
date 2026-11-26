@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ZodValidationException } from 'nestjs-zod';
+import { z } from 'zod';
+import { pgErrorOf } from '../db/pg-error';
 import { type ErrorBody } from './app.exception';
 
 const CODE_BY_STATUS: Partial<Record<number, string>> = {
@@ -19,8 +21,6 @@ const CODE_BY_STATUS: Partial<Record<number, string>> = {
   [HttpStatus.SERVICE_UNAVAILABLE]: 'SERVICE_UNAVAILABLE',
 };
 
-type ValidationIssue = { path: string; message: string };
-
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -28,6 +28,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();
     const body = this.toBody(exception);
+    response.locals.errorCode = body.code;
     response.status(body.statusCode).json(body);
   }
 
@@ -42,60 +43,49 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     if (exception instanceof HttpException) {
-      const statusCode = exception.getStatus();
-      const raw: unknown = exception.getResponse();
-      if (isErrorBody(raw)) {
-        return raw;
-      }
-      return {
-        statusCode,
-        code: CODE_BY_STATUS[statusCode] ?? 'HTTP_ERROR',
-        message: messageOf(raw),
-      };
+      return httpBody(exception);
     }
 
-    const message =
-      exception instanceof Error ? exception.message : 'unknown error';
-    const pgCode = postgresCode(exception);
-    this.logger.error(
-      pgCode === undefined ? message : `${message} (pg ${pgCode})`,
-      exception instanceof Error ? exception.stack : undefined,
-    );
+    this.logUnexpected(exception);
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       code: 'INTERNAL_ERROR',
       message: 'Internal server error',
     };
   }
+
+  private logUnexpected(exception: unknown): void {
+    const message =
+      exception instanceof Error ? exception.message : 'unknown error';
+    const pg = pgErrorOf(exception);
+    this.logger.error(
+      pg === undefined ? message : `${message} (pg ${pg.code})`,
+      exception instanceof Error ? exception.stack : undefined,
+    );
+  }
 }
 
-function postgresCode(error: unknown): string | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined;
+function httpBody(exception: HttpException): ErrorBody {
+  const statusCode = exception.getStatus();
+  const raw: unknown = exception.getResponse();
+  if (isErrorBody(raw)) {
+    return raw;
   }
-  if (
-    'code' in error &&
-    typeof error.code === 'string' &&
-    /^[0-9A-Z]{5}$/.test(error.code)
-  ) {
-    return error.code;
-  }
-  if ('cause' in error) {
-    return postgresCode(error.cause);
-  }
-  return undefined;
+  return {
+    statusCode,
+    code: CODE_BY_STATUS[statusCode] ?? 'HTTP_ERROR',
+    message: messageOf(raw),
+  };
 }
+
+const errorBodySchema = z.object({
+  statusCode: z.number(),
+  code: z.string(),
+  message: z.string(),
+});
 
 function isErrorBody(value: unknown): value is ErrorBody {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-  const body = value as Record<string, unknown>;
-  return (
-    typeof body.statusCode === 'number' &&
-    typeof body.code === 'string' &&
-    typeof body.message === 'string'
-  );
+  return errorBodySchema.safeParse(value).success;
 }
 
 function messageOf(value: unknown): string {
@@ -111,27 +101,12 @@ function messageOf(value: unknown): string {
   return 'Request failed';
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-function isUnknownArray(value: unknown): value is unknown[] {
-  return Array.isArray(value);
-}
-
-function validationIssues(error: unknown): ValidationIssue[] {
-  if (!isRecord(error) || !isUnknownArray(error.issues)) {
+function validationIssues(error: unknown): { path: string; message: string }[] {
+  if (!(error instanceof z.ZodError)) {
     return [];
   }
-  return error.issues.map((issue) => {
-    if (!isRecord(issue)) {
-      return { path: '', message: 'Invalid' };
-    }
-    const path = isUnknownArray(issue.path)
-      ? issue.path.map((part) => String(part)).join('.')
-      : '';
-    const message =
-      typeof issue.message === 'string' ? issue.message : 'Invalid';
-    return { path, message };
-  });
+  return error.issues.map((issue) => ({
+    path: issue.path.map(String).join('.'),
+    message: issue.message,
+  }));
 }

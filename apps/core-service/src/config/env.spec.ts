@@ -30,8 +30,9 @@ describe('validateEnv', () => {
   });
 
   it.each(ENV_KEYS)('throws when %s is missing', (key) => {
-    const withoutKey: Record<string, string> = { ...valid };
-    delete withoutKey[key];
+    const withoutKey = Object.fromEntries(
+      Object.entries(valid).filter(([name]) => name !== key),
+    );
     expect(() => validateEnv(withoutKey)).toThrow(
       new RegExp(`Invalid environment: ${key}: is required`),
     );

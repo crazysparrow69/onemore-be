@@ -1,21 +1,20 @@
 import {
   type CanActivate,
   type ExecutionContext,
-  HttpStatus,
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AppException } from '../../common/app.exception';
+import { appError } from '../../common/errors';
 import type { UserRole } from '../../db/schema/users';
-import { UsersRepository } from '../users/users.repository';
+import { UsersService } from '../users/users.service';
 import { ROLES_KEY } from './auth.constants';
-import type { AuthUser } from './auth.types';
+import type { AuthRequest } from './auth.types';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly users: UsersRepository,
+    private readonly users: UsersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -27,20 +26,14 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<{ user?: AuthUser }>();
-    const user = request.user;
+    const { user } = context.switchToHttp().getRequest<AuthRequest>();
     if (!user) {
-      throw new AppException(
-        HttpStatus.UNAUTHORIZED,
-        'UNAUTHORIZED',
-        'Unauthorized',
-      );
+      throw appError('UNAUTHORIZED');
     }
 
     const row = await this.users.findById(user.id);
-    const role = row?.role;
-    if ((role !== 'user' && role !== 'admin') || !roles.includes(role)) {
-      throw new AppException(HttpStatus.FORBIDDEN, 'FORBIDDEN', 'Forbidden');
+    if (!row || !roles.includes(row.role)) {
+      throw appError('FORBIDDEN');
     }
     return true;
   }

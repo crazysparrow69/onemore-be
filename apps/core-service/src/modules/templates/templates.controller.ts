@@ -13,6 +13,10 @@ import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ZodResponse } from 'nestjs-zod';
 import { ApiErrorResponses } from '../../common/api-error-responses.decorator';
+import {
+  ApiUpsertResponse,
+  setUpsertStatus,
+} from '../../common/upsert-response';
 import { CurrentUser } from '../auth/auth.decorators';
 import type { AuthUser } from '../auth/auth.types';
 import { TemplateIdParamsDto, TemplateInputDto } from './template-input.schema';
@@ -31,15 +35,9 @@ export class TemplatesController {
   constructor(private readonly templates: TemplatesService) {}
 
   @Put(':id')
-  @ZodResponse({
-    status: 200,
-    description: 'The program was replaced with the same id',
-    type: TemplateDto,
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'The program was created',
-    type: TemplateDto,
+  @ApiUpsertResponse(TemplateDto, {
+    replaced: 'The program was replaced with the same id',
+    created: 'The program was created',
   })
   @ApiErrorResponses(400, 401, 404, 409)
   async save(
@@ -53,7 +51,7 @@ export class TemplatesController {
       params.id,
       body,
     );
-    response.status(created ? HttpStatus.CREATED : HttpStatus.OK);
+    setUpsertStatus(response, created);
     return template;
   }
 

@@ -1,19 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { EXERCISE_TYPES } from '../../db/schema/exercises';
-import { SET_KINDS } from '../../db/schema/workouts';
+import { instantResponse } from '../../common/response';
+import { setValuesResponse } from '../exercises/set.response';
 
-const instant = z.string().meta({ format: 'date-time' });
-
-const templateSet = z
-  .object({
-    kind: z.enum(SET_KINDS),
-    weightKg: z.number().nullable(),
-    reps: z.number().int().nullable(),
-    durationS: z.number().int().nullable(),
-    distanceM: z.number().nullable(),
-  })
-  .meta({ id: 'TemplateSet' });
+const templateSet = z.object(setValuesResponse).meta({ id: 'TemplateSet' });
 
 const templateExercise = z
   .object({
@@ -34,9 +25,9 @@ export const templateSchema = z
     id: z.uuid(),
     name: z.string(),
     notes: z.string().nullable(),
-    createdAt: instant,
-    updatedAt: instant,
-    lastPerformedAt: instant.nullable(),
+    createdAt: instantResponse,
+    updatedAt: instantResponse,
+    lastPerformedAt: instantResponse.nullable(),
     exercises: z.array(templateExercise),
   })
   .meta({ id: 'Template' });
