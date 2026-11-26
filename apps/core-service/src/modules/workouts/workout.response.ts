@@ -34,6 +34,7 @@ const workoutExercise = z
     type: z.enum(EXERCISE_TYPES),
     custom: z.boolean(),
     notes: z.string().nullable(),
+    restSeconds: z.number().int().nullable(),
     sets: z.array(workoutSet),
   })
   .meta({ id: 'WorkoutExercise' });
@@ -75,6 +76,37 @@ export const workoutListResponseSchema = z
   })
   .meta({ id: 'WorkoutListResponse' });
 
+const previousSet = z
+  .object({
+    kind: z.enum(SET_KINDS),
+    weightKg: z.number().nullable(),
+    reps: z.number().int().nullable(),
+    durationS: z.number().int().nullable(),
+    distanceM: z.number().nullable(),
+  })
+  .meta({ id: 'PreviousSet' });
+
+export const previousSetsResponseSchema = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          exerciseId: z.uuid(),
+          workoutId: z.uuid(),
+          startedAt: instant,
+          localDate: z.string().meta({ format: 'date' }),
+          restSeconds: z.number().int().nullable(),
+          sets: z.array(previousSet),
+        })
+        .meta({ id: 'PreviousExercise' }),
+    ),
+  })
+  .meta({ id: 'PreviousSetsResponse' });
+
+export class PreviousSetsResponseDto extends createZodDto(
+  previousSetsResponseSchema,
+) {}
+
 export class WorkoutDetailsDto extends createZodDto(workoutDetailsSchema) {}
 export class WorkoutListResponseDto extends createZodDto(
   workoutListResponseSchema,
@@ -83,4 +115,5 @@ export class WorkoutListResponseDto extends createZodDto(
 export type WorkoutDetails = z.infer<typeof workoutDetailsSchema>;
 export type WorkoutListItem = z.infer<typeof workoutListItemSchema>;
 export type WorkoutListResponse = z.infer<typeof workoutListResponseSchema>;
+export type PreviousSetsResponse = z.infer<typeof previousSetsResponseSchema>;
 export type WorkoutTotals = z.infer<typeof summary>;

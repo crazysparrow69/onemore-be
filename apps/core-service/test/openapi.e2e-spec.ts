@@ -40,6 +40,7 @@ describe('openapi.json', () => {
       '/api/exercises/{id}',
       '/api/me',
       '/api/workouts',
+      '/api/workouts/previous-sets',
       '/api/workouts/{id}',
       '/health',
       '/health/ready',

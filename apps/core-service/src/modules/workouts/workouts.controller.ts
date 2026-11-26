@@ -18,10 +18,13 @@ import { CurrentUser } from '../auth/auth.decorators';
 import type { AuthUser } from '../auth/auth.types';
 import {
   ListWorkoutsQueryDto,
+  PreviousSetsQueryDto,
   WorkoutIdParamsDto,
   WorkoutInputDto,
 } from './workout-input.schema';
 import {
+  PreviousSetsResponseDto,
+  type PreviousSetsResponse,
   WorkoutDetailsDto,
   WorkoutListResponseDto,
   type WorkoutDetails,
@@ -74,6 +77,21 @@ export class WorkoutsController {
     @Query() query: ListWorkoutsQueryDto,
   ): Promise<WorkoutListResponse> {
     return this.workouts.list(user, query.offset, query.limit);
+  }
+
+  @Get('previous-sets')
+  @ZodResponse({
+    status: 200,
+    description:
+      'The sets of the latest saved workout for each requested exercise',
+    type: PreviousSetsResponseDto,
+  })
+  @ApiErrorResponses(400, 401)
+  previousSets(
+    @CurrentUser() user: AuthUser,
+    @Query() query: PreviousSetsQueryDto,
+  ): Promise<PreviousSetsResponse> {
+    return this.workouts.previousSets(user, query.exerciseIds);
   }
 
   @Get(':id')

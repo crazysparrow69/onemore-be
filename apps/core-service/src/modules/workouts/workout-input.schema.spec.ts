@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MAX_REST_SECONDS,
   MAX_SETS_PER_EXERCISE,
   MAX_WORKOUT_EXERCISES,
+  MIN_REST_SECONDS,
+  previousSetsQuerySchema,
   workoutInputSchema,
 } from './workout-input.schema';
 
@@ -34,6 +37,7 @@ describe('workoutInputSchema', () => {
     expect(parsed.name).toBe('');
     expect(parsed.notes).toBeNull();
     expect(parsed.exercises[0]?.notes).toBeNull();
+    expect(parsed.exercises[0]?.restSeconds).toBeNull();
     expect(parsed.exercises[0]?.sets[0]).toEqual({
       kind: 'working',
       weightKg: 80,
@@ -139,5 +143,61 @@ describe('workoutInputSchema', () => {
     expect(
       issuePaths({ ...valid, exercises: [{ exerciseId, sets }] }),
     ).toContain('exercises.0.sets');
+  });
+});
+
+describe('rest seconds', () => {
+  const withRest = (restSeconds: unknown) => ({
+    ...valid,
+    exercises: [{ ...valid.exercises[0], restSeconds }],
+  });
+
+  it.each([MIN_REST_SECONDS, 90, MAX_REST_SECONDS, null])(
+    'accepts %s',
+    (value) => {
+      expect(workoutInputSchema.safeParse(withRest(value)).success).toBe(true);
+    },
+  );
+
+  it.each([0, MIN_REST_SECONDS - 1, MAX_REST_SECONDS + 1, 1.5, '90'])(
+    'rejects %s',
+    (value) => {
+      expect(issuePaths(withRest(value))).toEqual(['exercises.0.restSeconds']);
+    },
+  );
+});
+
+describe('previousSetsQuerySchema', () => {
+  const first = '0198b2c0-0000-7000-8000-000000000001';
+  const second = '0198b2c0-0000-7000-8000-000000000002';
+
+  it('splits the ids and removes duplicates', () => {
+    const parsed = previousSetsQuerySchema.parse({
+      exerciseIds: `${first},${second},${first}`,
+    });
+
+    expect(parsed.exerciseIds).toEqual([first, second]);
+  });
+
+  it.each(['', ',', 'abc', `${first},abc`])('rejects %j', (value) => {
+    expect(
+      previousSetsQuerySchema.safeParse({ exerciseIds: value }).success,
+    ).toBe(false);
+  });
+
+  it('rejects more ids than a workout can hold', () => {
+    const ids = Array.from(
+      { length: MAX_WORKOUT_EXERCISES + 1 },
+      (_, index) =>
+        `0198b2c0-0000-7000-8000-${String(index).padStart(12, '0')}`,
+    );
+
+    expect(
+      previousSetsQuerySchema.safeParse({ exerciseIds: ids.join(',') }).success,
+    ).toBe(false);
+  });
+
+  it('is required', () => {
+    expect(previousSetsQuerySchema.safeParse({}).success).toBe(false);
   });
 });

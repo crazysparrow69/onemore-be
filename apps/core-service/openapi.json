@@ -965,6 +965,62 @@
           "workouts"
         ]
       }
+    },
+    "/api/workouts/previous-sets": {
+      "get": {
+        "operationId": "WorkoutsController_previousSets",
+        "parameters": [
+          {
+            "name": "exerciseIds",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated exercise ids, up to 50; exercises without history are omitted from the answer",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The sets of the latest saved workout for each requested exercise",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviousSetsResponse_Output"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "workouts"
+        ]
+      }
     }
   },
   "info": {
@@ -1817,6 +1873,13 @@
             "default": null,
             "nullable": true
           },
+          "restSeconds": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 600,
+            "default": null,
+            "nullable": true
+          },
           "sets": {
             "maxItems": 50,
             "type": "array",
@@ -1991,6 +2054,12 @@
             "type": "string",
             "nullable": true
           },
+          "restSeconds": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
           "sets": {
             "type": "array",
             "items": {
@@ -2006,6 +2075,7 @@
           "type",
           "custom",
           "notes",
+          "restSeconds",
           "sets"
         ],
         "additionalProperties": false
@@ -2177,6 +2247,12 @@
             "type": "string",
             "nullable": true
           },
+          "restSeconds": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
           "sets": {
             "type": "array",
             "items": {
@@ -2192,6 +2268,7 @@
           "type",
           "custom",
           "notes",
+          "restSeconds",
           "sets"
         ]
       },
@@ -2398,6 +2475,107 @@
           "items",
           "total",
           "nextOffset"
+        ],
+        "additionalProperties": false
+      },
+      "PreviousExercise_Output": {
+        "type": "object",
+        "properties": {
+          "exerciseId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "workoutId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "localDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "restSeconds": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
+          "sets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreviousSet_Output"
+            }
+          }
+        },
+        "required": [
+          "exerciseId",
+          "workoutId",
+          "startedAt",
+          "localDate",
+          "restSeconds",
+          "sets"
+        ],
+        "additionalProperties": false
+      },
+      "PreviousSet_Output": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "warmup",
+              "working",
+              "drop",
+              "failure"
+            ]
+          },
+          "weightKg": {
+            "type": "number",
+            "nullable": true
+          },
+          "reps": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
+          "durationS": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
+          "distanceM": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "kind",
+          "weightKg",
+          "reps",
+          "durationS",
+          "distanceM"
+        ],
+        "additionalProperties": false
+      },
+      "PreviousSetsResponse_Output": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreviousExercise_Output"
+            }
+          }
+        },
+        "required": [
+          "items"
         ],
         "additionalProperties": false
       }

@@ -12,7 +12,11 @@ import {
   periodViolation,
   totalsOf,
 } from './workout-rules';
-import type { WorkoutDetails, WorkoutListResponse } from './workout.response';
+import type {
+  PreviousSetsResponse,
+  WorkoutDetails,
+  WorkoutListResponse,
+} from './workout.response';
 import {
   WorkoutsRepository,
   type NewWorkoutExercise,
@@ -99,6 +103,7 @@ export class WorkoutsService {
           exerciseId: item.exerciseId,
           type,
           notes: item.notes,
+          restSeconds: item.restSeconds,
           sets,
         });
       }
@@ -167,6 +172,7 @@ export class WorkoutsService {
         type: item.type,
         custom: item.custom,
         notes: item.notes,
+        restSeconds: item.restSeconds,
         sets: item.sets.map((set) => ({
           kind: set.kind,
           weightKg: set.weightKg,
@@ -213,6 +219,34 @@ export class WorkoutsService {
     });
     const end = offset + rows.length;
     return { items, total, nextOffset: end < total ? end : null };
+  }
+
+  async previousSets(
+    auth: AuthUser,
+    exerciseIds: readonly string[],
+  ): Promise<PreviousSetsResponse> {
+    const latest = await this.workouts.latestExercises(auth.id, exerciseIds);
+    const sets = await this.workouts.setsOf(
+      latest.map((item) => item.sessionExerciseId),
+    );
+    return {
+      items: latest.map((item) => ({
+        exerciseId: item.exerciseId,
+        workoutId: item.workoutId,
+        startedAt: item.startedAt.toISOString(),
+        localDate: item.localDate,
+        restSeconds: item.restSeconds,
+        sets: sets
+          .filter((set) => set.sessionExerciseId === item.sessionExerciseId)
+          .map((set) => ({
+            kind: set.kind,
+            weightKg: set.weightKg,
+            reps: set.reps,
+            durationS: set.durationS,
+            distanceM: set.distanceM,
+          })),
+      })),
+    };
   }
 
   async remove(auth: AuthUser, id: string): Promise<void> {

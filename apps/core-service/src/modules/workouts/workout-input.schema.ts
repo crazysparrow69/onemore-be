@@ -13,6 +13,8 @@ export const MAX_WORKOUT_EXERCISES = 50;
 export const MAX_SETS_PER_EXERCISE = 50;
 export const MAX_NAME_LENGTH = 80;
 export const MAX_NOTES_LENGTH = 1000;
+export const MIN_REST_SECONDS = 5;
+export const MAX_REST_SECONDS = 600;
 
 const CONTROL_CHARACTER = /(?![\t\n\r\f\v])\p{Cc}/u;
 
@@ -77,6 +79,13 @@ const exerciseSchema = z
   .strictObject({
     exerciseId: z.uuid(),
     notes,
+    restSeconds: z
+      .number()
+      .int()
+      .min(MIN_REST_SECONDS)
+      .max(MAX_REST_SECONDS)
+      .nullable()
+      .default(null),
     sets: z.array(setSchema).max(MAX_SETS_PER_EXERCISE),
   })
   .meta({ id: 'WorkoutExerciseInput' });
@@ -115,3 +124,22 @@ export class ListWorkoutsQueryDto extends createZodDto(
 ) {}
 
 export type ListWorkoutsQuery = z.output<typeof listWorkoutsQuerySchema>;
+
+export const previousSetsQuerySchema = z
+  .object({
+    exerciseIds: z
+      .string()
+      .transform((value) => [
+        ...new Set(value.split(',').filter((item) => item.length > 0)),
+      ])
+      .pipe(z.array(z.uuid()).min(1).max(MAX_WORKOUT_EXERCISES))
+      .meta({
+        description:
+          'Comma-separated exercise ids, up to 50; exercises without history are omitted from the answer',
+      }),
+  })
+  .meta({ id: 'PreviousSetsQuery' });
+
+export class PreviousSetsQueryDto extends createZodDto(
+  previousSetsQuerySchema,
+) {}

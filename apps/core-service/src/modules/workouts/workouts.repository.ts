@@ -29,6 +29,7 @@ export type NewWorkoutExercise = {
   exerciseId: string;
   type: ExerciseType;
   notes: string | null;
+  restSeconds: number | null;
   sets: NewWorkoutSet[];
 };
 
@@ -62,9 +63,19 @@ export type SessionExerciseRow = {
   exerciseId: string;
   type: ExerciseType;
   notes: string | null;
+  restSeconds: number | null;
   name: string;
   image: string | null;
   custom: boolean;
+};
+
+export type PreviousExerciseRow = {
+  sessionExerciseId: string;
+  exerciseId: string;
+  workoutId: string;
+  startedAt: Date;
+  localDate: string;
+  restSeconds: number | null;
 };
 
 export type SessionSetRow = {
@@ -83,9 +94,19 @@ const exerciseRowSchema = z.object({
   exercise_id: z.uuid(),
   type: z.enum(EXERCISE_TYPES),
   notes: z.string().nullable(),
+  rest_seconds: z.number().int().nullable(),
   name: z.string(),
   image_keys: z.array(z.string()),
   custom: z.boolean(),
+});
+
+const previousRowSchema = z.object({
+  id: z.uuid(),
+  exercise_id: z.uuid(),
+  rest_seconds: z.number().int().nullable(),
+  workout_id: z.uuid(),
+  started_at: z.coerce.date(),
+  local_date: z.string(),
 });
 
 const sessionColumns = {
@@ -182,6 +203,7 @@ export class WorkoutsRepository {
           exerciseType: item.type,
           position,
           notes: item.notes,
+          restSeconds: item.restSeconds,
         })),
       );
       await tx.insert(sessionSets).values(
@@ -254,7 +276,7 @@ export class WorkoutsRepository {
     );
     const result = await this.db.execute(sql`
       select se.id, se.session_id, se.exercise_id, se.exercise_type as type,
-             se.notes, n.name, e.image_keys, (e.owner_id is not null) as custom
+             se.notes, se.rest_seconds, n.name, e.image_keys, (e.owner_id is not null) as custom
       from core.session_exercises se
       join core.exercises e on e.id = se.exercise_id
       join lateral ${bestTranslation(locale, sql`t.name`)} as n(name) on true
@@ -268,6 +290,7 @@ export class WorkoutsRepository {
         exerciseId: row.exercise_id,
         type: row.type,
         notes: row.notes,
+        restSeconds: row.rest_seconds,
         name: row.name,
         image: row.image_keys[0] ?? null,
         custom: row.custom,
@@ -294,6 +317,38 @@ export class WorkoutsRepository {
       .from(sessionSets)
       .where(inArray(sessionSets.sessionExerciseId, [...sessionExerciseIds]))
       .orderBy(sessionSets.sessionExerciseId, sessionSets.position);
+  }
+
+  async latestExercises(
+    userId: string,
+    exerciseIds: readonly string[],
+  ): Promise<PreviousExerciseRow[]> {
+    if (exerciseIds.length === 0) {
+      return [];
+    }
+    const ids = sql.join(
+      exerciseIds.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    );
+    const result = await this.db.execute(sql`
+      select distinct on (se.exercise_id)
+             se.id, se.exercise_id, se.rest_seconds,
+             ws.id as workout_id, ws.started_at, ws.local_date
+      from core.session_exercises se
+      join core.workout_sessions ws on ws.id = se.session_id
+      where ws.owner_id = ${userId} and se.exercise_id in (${ids})
+      order by se.exercise_id, ws.started_at desc, ws.id desc, se.position desc`);
+    return result.rows.map((raw) => {
+      const row = previousRowSchema.parse(raw);
+      return {
+        sessionExerciseId: row.id,
+        exerciseId: row.exercise_id,
+        workoutId: row.workout_id,
+        startedAt: row.started_at,
+        localDate: row.local_date,
+        restSeconds: row.rest_seconds,
+      };
+    });
   }
 
   async remove(userId: string, id: string): Promise<boolean> {

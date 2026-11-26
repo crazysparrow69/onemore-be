@@ -218,6 +218,7 @@ describe('workouts (real Postgres)', () => {
   describe('authentication', () => {
     it.each([
       ['get', '/api/workouts'],
+      ['get', `/api/workouts/previous-sets?exerciseIds=${BENCH}`],
       ['get', `/api/workouts/${W1}`],
       ['put', `/api/workouts/${W1}`],
       ['delete', `/api/workouts/${W1}`],
@@ -269,6 +270,7 @@ describe('workouts (real Postgres)', () => {
             type: 'weight_reps',
             custom: false,
             notes: 'Широкий хват',
+            restSeconds: null,
             sets: [
               {
                 kind: 'warmup',
@@ -932,6 +934,188 @@ describe('workouts (real Postgres)', () => {
 
     it('is 400 for an id that is not a uuid', async () => {
       expect((await call('get', '/api/workouts/abc', tokenA)).status).toBe(400);
+    });
+  });
+
+  describe('restSeconds', () => {
+    it('is stored per exercise and returned', async () => {
+      const result = await put(
+        W1,
+        workout([
+          bench([done({ weightKg: 80, reps: 8 })], { restSeconds: 90 }),
+          {
+            exerciseId: PLANK,
+            sets: [done({ durationS: 60 })],
+          },
+        ]),
+      );
+
+      expect(result.status).toBe(201);
+      const items = result.body.exercises as Json[];
+      expect(items.map((item) => item.restSeconds)).toEqual([90, null]);
+      const stored = await admin.query<{ rest_seconds: number | null }>(
+        'select rest_seconds from core.session_exercises order by position',
+      );
+      expect(stored.rows.map((row) => row.rest_seconds)).toEqual([90, null]);
+    });
+
+    it('is 400 when out of range', async () => {
+      const result = await put(
+        W1,
+        workout([bench([done({ weightKg: 80, reps: 8 })], { restSeconds: 3 })]),
+      );
+
+      expect(result.status).toBe(400);
+      expect(await counts()).toEqual({ sessions: 0, exercises: 0, sets: 0 });
+    });
+  });
+
+  describe('GET /api/workouts/previous-sets', () => {
+    const path = (...ids: string[]) =>
+      `/api/workouts/previous-sets?exerciseIds=${ids.join(',')}`;
+
+    it('returns the sets of the latest workout for each exercise', async () => {
+      await put(
+        W1,
+        workout([
+          bench([done({ weightKg: 60, reps: 12 })], { restSeconds: 60 }),
+        ]),
+      );
+      await put(
+        W2,
+        workout(
+          [
+            bench(
+              [
+                done({ kind: 'warmup', weightKg: 40, reps: 12 }, 5),
+                done({ weightKg: 80, reps: 10 }, 10),
+              ],
+              { restSeconds: 120 },
+            ),
+            { exerciseId: PLANK, sets: [done({ durationS: 45 })] },
+          ],
+          { startedAt: at(0, '2026-11-22'), endedAt: at(60, '2026-11-22') },
+        ),
+      );
+
+      const response = await call('get', path(BENCH, PLANK, RUN), tokenA);
+
+      expect(response.status).toBe(200);
+      expect(bodyOf(response).items).toEqual([
+        {
+          exerciseId: BENCH,
+          workoutId: W2,
+          startedAt: at(0, '2026-11-22'),
+          localDate: '2026-11-22',
+          restSeconds: 120,
+          sets: [
+            {
+              kind: 'warmup',
+              weightKg: 40,
+              reps: 12,
+              durationS: null,
+              distanceM: null,
+            },
+            {
+              kind: 'working',
+              weightKg: 80,
+              reps: 10,
+              durationS: null,
+              distanceM: null,
+            },
+          ],
+        },
+        {
+          exerciseId: PLANK,
+          workoutId: W2,
+          startedAt: at(0, '2026-11-22'),
+          localDate: '2026-11-22',
+          restSeconds: null,
+          sets: [
+            {
+              kind: 'working',
+              weightKg: null,
+              reps: null,
+              durationS: 45,
+              distanceM: null,
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('takes the latest by start time, not by save order', async () => {
+      await put(
+        W2,
+        workout([bench([done({ weightKg: 80, reps: 8 })])], {
+          startedAt: at(0, '2026-11-22'),
+          endedAt: at(60, '2026-11-22'),
+        }),
+      );
+      await put(W1, workout([bench([done({ weightKg: 60, reps: 12 })])]));
+
+      const body = bodyOf(await call('get', path(BENCH), tokenA));
+
+      expect((body.items as Json[]).map((item) => item.workoutId)).toEqual([
+        W2,
+      ]);
+    });
+
+    it('uses the last occurrence when the exercise is in the workout twice', async () => {
+      await put(
+        W1,
+        workout([
+          bench([done({ weightKg: 60, reps: 12 })]),
+          { exerciseId: PLANK, sets: [done({ durationS: 30 })] },
+          bench([done({ weightKg: 70, reps: 6 })]),
+        ]),
+      );
+
+      const body = bodyOf(await call('get', path(BENCH), tokenA));
+
+      const sets = (body.items as { sets: Json[] }[])[0]?.sets;
+      expect(sets?.map((set) => [set.weightKg, set.reps])).toEqual([[70, 6]]);
+    });
+
+    it('does not see workouts of another user', async () => {
+      await put(W1, workout([bench([done({ weightKg: 80, reps: 8 })])]));
+
+      const body = bodyOf(await call('get', path(BENCH), tokenB));
+
+      expect(body.items).toEqual([]);
+    });
+
+    it('forgets a deleted workout and falls back to the earlier one', async () => {
+      await put(W1, workout([bench([done({ weightKg: 60, reps: 12 })])]));
+      await put(
+        W2,
+        workout([bench([done({ weightKg: 80, reps: 8 })])], {
+          startedAt: at(0, '2026-11-22'),
+          endedAt: at(60, '2026-11-22'),
+        }),
+      );
+      await call('delete', `/api/workouts/${W2}`, tokenA);
+
+      const body = bodyOf(await call('get', path(BENCH), tokenA));
+
+      expect((body.items as Json[]).map((item) => item.workoutId)).toEqual([
+        W1,
+      ]);
+    });
+
+    it('omits unknown exercises', async () => {
+      const response = await call('get', path(UNKNOWN), tokenA);
+
+      expect(response.status).toBe(200);
+      expect(bodyOf(response).items).toEqual([]);
+    });
+
+    it.each([
+      ['no ids', '/api/workouts/previous-sets'],
+      ['an empty list', '/api/workouts/previous-sets?exerciseIds='],
+      ['an invalid uuid', '/api/workouts/previous-sets?exerciseIds=abc'],
+    ])('is 400 for %s', async (_label, url) => {
+      expect((await call('get', url, tokenA)).status).toBe(400);
     });
   });
 
