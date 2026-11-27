@@ -54,10 +54,10 @@ services:
       dockerfile: apps/nutrition-service/Dockerfile
       target: development
     ports:
-      - "5002:5002"
+      - "5003:5003"
     environment:
       NODE_ENV: development
-      PORT: "5002"
+      PORT: "5003"
       LOG_LEVEL: debug
       APP_VERSION: dev
       DATABASE_URL: postgresql://nutrition_svc:nutrition_svc_local@db:5432/onemore
@@ -71,7 +71,7 @@ services:
       - ./apps/nutrition-service/tsconfig.build.json:/repo/apps/nutrition-service/tsconfig.build.json
       - ./apps/nutrition-service/nest-cli.json:/repo/apps/nutrition-service/nest-cli.json
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5002/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5003/health"]
       interval: 5s
       timeout: 5s
       retries: 12

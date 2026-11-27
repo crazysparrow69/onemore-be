@@ -17,7 +17,7 @@ FROM deps AS development
 COPY apps/nutrition-service apps/nutrition-service
 ENV NODE_ENV=development
 WORKDIR /repo/apps/nutrition-service
-EXPOSE 5002
+EXPOSE 5003
 CMD ["pnpm", "exec", "nest", "start", "--watch"]
 
 FROM deps AS build

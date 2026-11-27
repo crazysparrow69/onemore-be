@@ -76,7 +76,7 @@ Everything in containers (service runs with hot reload):
 docker compose --profile full up --build
 ```
 
-core-service listens on `5001`, nutrition-service on `5002`.
+core-service listens on `5001`, nutrition-service on `5003`.
 
 Production image (no secrets baked in; pass `APP_VERSION` at run time):
 

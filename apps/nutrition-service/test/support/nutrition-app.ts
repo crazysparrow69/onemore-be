@@ -68,7 +68,7 @@ export async function startApp(): Promise<TestApp> {
   const admin = new Pool({ connectionString: container.getConnectionUri() });
 
   process.env.NODE_ENV = 'test';
-  process.env.PORT = '5002';
+  process.env.PORT = '5003';
   process.env.LOG_LEVEL = 'error';
   process.env.APP_VERSION = 'test';
   process.env.DATABASE_URL = url;
