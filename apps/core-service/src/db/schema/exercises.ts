@@ -2,6 +2,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import {
   check,
   index,
+  integer,
   primaryKey,
   text,
   timestamp,
@@ -200,5 +201,18 @@ export const exerciseTranslations = coreSchema.table(
   (table) => [
     primaryKey({ columns: [table.exerciseId, table.locale] }),
     check('exercise_translations_locale_check', oneOf('locale', LOCALES)),
+  ],
+);
+
+export const exerciseStats = coreSchema.table(
+  'exercise_stats',
+  {
+    exerciseId: uuid('exercise_id')
+      .primaryKey()
+      .references(() => exercises.id, { onDelete: 'cascade' }),
+    usersCount: integer('users_count').notNull().default(0),
+  },
+  (table) => [
+    check('exercise_stats_users_count_check', sql`${table.usersCount} >= 0`),
   ],
 );

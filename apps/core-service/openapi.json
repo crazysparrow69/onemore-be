@@ -460,7 +460,7 @@
         ],
         "responses": {
           "200": {
-            "description": "A page of exercises visible to the caller, named in the caller language",
+            "description": "A page of exercises visible to the caller, named in the caller language. Sorted by search relevance, then by how many users trained the exercise, then by name",
             "content": {
               "application/json": {
                 "schema": {

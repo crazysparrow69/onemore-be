@@ -38,7 +38,7 @@ export class ExercisesController {
   @ZodResponse({
     status: 200,
     description:
-      'A page of exercises visible to the caller, named in the caller language',
+      'A page of exercises visible to the caller, named in the caller language. Sorted by search relevance, then by how many users trained the exercise, then by name',
     type: ExerciseListResponseDto,
   })
   @ApiErrorResponses(400, 401)

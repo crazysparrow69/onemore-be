@@ -47,6 +47,8 @@ The system exercises come from a snapshot of [free-exercise-db](https://github.c
 
 `pnpm seed` builds the service and writes the catalog into `core.exercises` and `core.exercise_translations`. It reads `DATABASE_URL` from the environment or `apps/core-service/.env`, needs the migrations applied first, and runs in one transaction. Rows are upserted by `(source, source_id)` and only changed rows are written, so running it again creates no duplicates. Exercises removed from the seed are left as they are. It is not part of the deploy: run it by hand against the target database after the data changes, for example `DATABASE_URL=... node apps/core-service/dist/seed.js` after `pnpm build`.
 
+`pnpm popularity:recount` fills `core.exercise_stats`: for every exercise, how many different users have it in a saved workout. The exercise search sorts by it, after the relevance group and before the name. Saving a workout does not touch the table, so the number is as fresh as the last recount. The migration counts the existing workouts once; after that `.github/workflows/popularity.yml` recounts weekly and can be started by hand. It needs the repository secret `DATABASE_URL` and reads nothing else. Only changed rows are written, so running it again is harmless.
+
 The photos live in the web repository (`public/exercises/<source_id in lowercase>/<n>.webp`); the database stores only their keys.
 
 ## Git hooks

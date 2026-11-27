@@ -138,6 +138,7 @@ export class ExercisesRepository {
              count(*) over () as total
       from core.exercises e
       join lateral ${bestTranslation(search.locale, sql`t.name`)} as n(name) on true
+      left join core.exercise_stats s on s.exercise_id = e.id
       join lateral (
         select
           ' ' || string_agg(${normalized(sql`t.name`)}, ' ') as names,
@@ -150,7 +151,7 @@ export class ExercisesRepository {
       ) d on true
       where ${visibleTo(search.userId)}
       ${filtersOf(search)}
-      order by rank, tag_hits desc, n.name ${collation}, e.id
+      order by rank, coalesce(s.users_count, 0) desc, tag_hits desc, n.name ${collation}, e.id
       limit ${search.limit} offset ${search.offset}`;
     const result = await this.db.execute(query);
     return result.rows.map((row) => listRowSchema.parse(row));

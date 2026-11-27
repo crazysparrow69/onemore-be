@@ -16,6 +16,7 @@
     "seed": "pnpm --filter core-service seed",
     "seed:translations": "pnpm --filter core-service seed:translations",
     "media:setup": "pnpm --filter core-service media:setup",
+    "popularity:recount": "pnpm --filter core-service popularity:recount",
     "media:cleanup": "pnpm --filter core-service media:cleanup",
     "lint": "pnpm -r lint",
     "format:check": "pnpm -r format:check",

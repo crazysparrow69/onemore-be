@@ -13,6 +13,7 @@
     "seed": "nest build && node --env-file-if-exists=.env dist/seed.js",
     "seed:translations": "nest build && node --env-file-if-exists=.env dist/seed-translations.js",
     "media:setup": "nest build && node --env-file-if-exists=.env dist/media-setup.js",
+    "popularity:recount": "nest build && node --env-file-if-exists=.env dist/popularity-recount.js",
     "media:cleanup": "nest build && node --env-file-if-exists=.env dist/media-cleanup.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",

@@ -12,6 +12,7 @@ export {
   PRIMARY_MUSCLES,
   PRIMARY_ONLY_GROUPS,
   VISIBILITIES,
+  exerciseStats,
   exerciseTranslations,
   exercises,
 } from './exercises';

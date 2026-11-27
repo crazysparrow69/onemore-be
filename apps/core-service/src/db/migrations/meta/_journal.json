@@ -57,6 +57,13 @@
       "when": 1795725458338,
       "tag": "0007_media",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795808335272,
+      "tag": "0008_exercise_popularity",
+      "breakpoints": true
     }
   ]
 }

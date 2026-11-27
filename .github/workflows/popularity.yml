@@ -1,0 +1,27 @@
+name: Exercise popularity
+
+# Weekly recount of how many people have trained each exercise. The search sorts by
+# this number. Run it by hand with "Run workflow" after the first deploy.
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: popularity
+  cancel-in-progress: false
+
+jobs:
+  recount:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Recount
+        run: pnpm popularity:recount
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

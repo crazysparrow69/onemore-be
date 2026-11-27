@@ -63,13 +63,13 @@ describe('core schema, role and migrations (real Postgres)', () => {
       runMigrations(coreUrl, migrationsFolder),
     ]);
 
-    expect(await appliedMigrations()).toBe(8);
+    expect(await appliedMigrations()).toBe(9);
   });
 
   it('is idempotent: running again changes nothing', async () => {
     await runMigrations(coreUrl, migrationsFolder);
 
-    expect(await appliedMigrations()).toBe(8);
+    expect(await appliedMigrations()).toBe(9);
   });
 
   it('drops the unused core.accounts table', async () => {
@@ -639,6 +639,44 @@ describe('core schema, role and migrations (real Postgres)', () => {
         [firstRow(created).id],
       );
       expect(firstRow(exercise).photo_id).toBeNull();
+    });
+  });
+  describe('exercise popularity', () => {
+    const EXERCISE = '0198b2c0-0000-7000-8000-0000000000e1';
+
+    beforeAll(async () => {
+      await core.query(
+        `insert into core.exercises (id, source, source_id, visibility, type, primary_muscles)
+         values ($1, 'onemore', 'popularity', 'public', 'weight_reps', array['chest'])`,
+        [EXERCISE],
+      );
+    });
+
+    it('starts at zero and rejects a negative count', async () => {
+      await core.query(
+        'insert into core.exercise_stats (exercise_id) values ($1)',
+        [EXERCISE],
+      );
+      const row = await core.query<{ users_count: number }>(
+        'select users_count from core.exercise_stats where exercise_id = $1',
+        [EXERCISE],
+      );
+      expect(firstRow(row).users_count).toBe(0);
+      await expect(
+        core.query(
+          'update core.exercise_stats set users_count = -1 where exercise_id = $1',
+          [EXERCISE],
+        ),
+      ).rejects.toThrow(/exercise_stats_users_count_check/);
+    });
+
+    it('goes away together with its exercise', async () => {
+      await core.query('delete from core.exercises where id = $1', [EXERCISE]);
+
+      const left = await core.query<{ n: number }>(
+        'select count(*)::int as n from core.exercise_stats',
+      );
+      expect(firstRow(left).n).toBe(0);
     });
   });
 });
