@@ -376,9 +376,9 @@ describe('body, goal, weight and daily target (real Postgres)', () => {
         effectiveFrom: TODAY,
         source: 'auto',
         caloriesKcal: 2210,
-        proteinG: 144,
+        proteinG: 136,
         fatG: 61,
-        carbsG: 271,
+        carbsG: 279,
         bmrKcal: 1780,
         tdeeKcal: 2759,
         floorApplied: false,
@@ -390,6 +390,8 @@ describe('body, goal, weight and daily target (real Postgres)', () => {
           activityLevel: 'moderate',
           goalType: 'lose',
           rateKgPerWeek: 0.5,
+          proteinGPerKg: 1.7,
+          fatSharePercent: 25,
         },
       });
     });
@@ -480,6 +482,71 @@ describe('body, goal, weight and daily target (real Postgres)', () => {
       await alice.delete(`/api/weight/${TODAY}?today=${TODAY}`).expect(204);
 
       expect((await targetOn(alice)).caloriesKcal).toBe(2210);
+    });
+  });
+
+  describe('own protein and fat', () => {
+    it('saves and returns them, and null means the formula decides', async () => {
+      const saved = await alice
+        .put('/api/body', { ...man, proteinGPerKg: 1.4, fatSharePercent: 30 })
+        .expect(200);
+      expect(bodyOf(saved)).toMatchObject({
+        proteinGPerKg: 1.4,
+        fatSharePercent: 30,
+      });
+
+      const cleared = await alice.put('/api/body', man).expect(200);
+      expect(bodyOf(cleared)).toMatchObject({
+        proteinGPerKg: null,
+        fatSharePercent: null,
+      });
+    });
+
+    it('rejects numbers outside the supported range', async () => {
+      for (const own of [
+        { proteinGPerKg: 0.5 },
+        { proteinGPerKg: 3.5 },
+        { fatSharePercent: 10 },
+        { fatSharePercent: 60 },
+        { fatSharePercent: 25.5 },
+      ]) {
+        const response = await alice.put('/api/body', { ...man, ...own });
+        expect(response.status).toBe(400);
+      }
+    });
+
+    it('changes the macros of the formula target and the inputs it records', async () => {
+      await onboard(alice);
+
+      await alice
+        .put('/api/body', { ...man, proteinGPerKg: 1.4, fatSharePercent: 30 })
+        .expect(200);
+
+      expect(await targetOn(alice)).toMatchObject({
+        source: 'auto',
+        caloriesKcal: 2210,
+        proteinG: 112,
+        fatG: 74,
+        carbsG: 274,
+        inputs: { proteinGPerKg: 1.4, fatSharePercent: 30 },
+      });
+      expect(await snapshotCount()).toBe(1);
+    });
+
+    it('applies to an own calorie target when it is set', async () => {
+      await onboard(alice);
+      await alice.put('/api/body', { ...man, proteinGPerKg: 2 }).expect(200);
+
+      const response = await alice.put('/api/nutrition/target/manual', {
+        caloriesKcal: 2500,
+        today: TODAY,
+      });
+
+      expect(jsonOf<Target>(response)).toMatchObject({
+        source: 'manual',
+        proteinG: 160,
+        fatG: 69,
+      });
     });
   });
 

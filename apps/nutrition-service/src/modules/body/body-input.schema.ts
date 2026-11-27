@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { ageOn } from '../../common/dates';
 import { localDate } from '../../common/validation';
 import { ACTIVITY_LEVELS, SEXES } from '../../db/schema';
+import {
+  FAT_SHARE_PERCENT_RANGE,
+  PROTEIN_G_PER_KG_RANGE,
+} from '../targets/target-formula';
 
 export const MIN_AGE = 13;
 export const MAX_AGE = 120;
@@ -17,6 +21,28 @@ export const bodyInputSchema = z
       .max(250)
       .transform((value) => Math.round(value * 10) / 10),
     activityLevel: z.enum(ACTIVITY_LEVELS),
+    proteinGPerKg: z
+      .number()
+      .min(PROTEIN_G_PER_KG_RANGE.min)
+      .max(PROTEIN_G_PER_KG_RANGE.max)
+      .transform((value) => Math.round(value * 10) / 10)
+      .nullish()
+      .transform((value) => value ?? null)
+      .meta({
+        description:
+          'Own protein in grams per kilogram of body weight; null means the formula decides',
+      }),
+    fatSharePercent: z
+      .number()
+      .int()
+      .min(FAT_SHARE_PERCENT_RANGE.min)
+      .max(FAT_SHARE_PERCENT_RANGE.max)
+      .nullish()
+      .transform((value) => value ?? null)
+      .meta({
+        description:
+          'Own share of calories from fat in percent; null means the formula decides',
+      }),
     today: localDate.meta({
       description: 'The date today in the time zone of the user',
     }),

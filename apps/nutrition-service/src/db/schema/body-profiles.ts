@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, date, numeric, text } from 'drizzle-orm/pg-core';
+import { check, date, numeric, smallint, text } from 'drizzle-orm/pg-core';
 import { oneOf } from './checks';
 import { timestamps } from './columns';
 import { nutritionSchema } from './nutrition-schema';
@@ -28,6 +28,12 @@ export const bodyProfiles = nutritionSchema.table(
       mode: 'number',
     }).notNull(),
     activityLevel: text('activity_level').$type<ActivityLevel>().notNull(),
+    proteinGPerKg: numeric('protein_g_per_kg', {
+      precision: 2,
+      scale: 1,
+      mode: 'number',
+    }),
+    fatSharePercent: smallint('fat_share_percent'),
     ...timestamps,
   },
   (table) => [
@@ -39,6 +45,14 @@ export const bodyProfiles = nutritionSchema.table(
     check(
       'body_profiles_height_check',
       sql`${table.heightCm} between 100 and 250`,
+    ),
+    check(
+      'body_profiles_protein_check',
+      sql`${table.proteinGPerKg} is null or ${table.proteinGPerKg} between 0.8 and 3`,
+    ),
+    check(
+      'body_profiles_fat_share_check',
+      sql`${table.fatSharePercent} is null or ${table.fatSharePercent} between 15 and 45`,
     ),
     check(
       'body_profiles_birth_date_check',

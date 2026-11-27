@@ -1,0 +1,4 @@
+ALTER TABLE "nutrition"."body_profiles" ADD COLUMN "protein_g_per_kg" numeric(2, 1);--> statement-breakpoint
+ALTER TABLE "nutrition"."body_profiles" ADD COLUMN "fat_share_percent" smallint;--> statement-breakpoint
+ALTER TABLE "nutrition"."body_profiles" ADD CONSTRAINT "body_profiles_protein_check" CHECK ("nutrition"."body_profiles"."protein_g_per_kg" is null or "nutrition"."body_profiles"."protein_g_per_kg" between 0.8 and 3);--> statement-breakpoint
+ALTER TABLE "nutrition"."body_profiles" ADD CONSTRAINT "body_profiles_fat_share_check" CHECK ("nutrition"."body_profiles"."fat_share_percent" is null or "nutrition"."body_profiles"."fat_share_percent" between 15 and 45);

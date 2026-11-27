@@ -1,0 +1,747 @@
+{
+  "id": "b71780d9-0ebd-44ce-a844-197dc752e201",
+  "prevId": "34ffebc8-aafc-4b50-acc3-aa3dd0c4116e",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "nutrition.body_profiles": {
+      "name": "body_profiles",
+      "schema": "nutrition",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "sex": {
+          "name": "sex",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "birth_date": {
+          "name": "birth_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "height_cm": {
+          "name": "height_cm",
+          "type": "numeric(4, 1)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activity_level": {
+          "name": "activity_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "protein_g_per_kg": {
+          "name": "protein_g_per_kg",
+          "type": "numeric(2, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_share_percent": {
+          "name": "fat_share_percent",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "body_profiles_sex_check": {
+          "name": "body_profiles_sex_check",
+          "value": "sex in ('male', 'female')"
+        },
+        "body_profiles_activity_check": {
+          "name": "body_profiles_activity_check",
+          "value": "activity_level in ('sedentary', 'light', 'moderate', 'active', 'very_active')"
+        },
+        "body_profiles_height_check": {
+          "name": "body_profiles_height_check",
+          "value": "\"nutrition\".\"body_profiles\".\"height_cm\" between 100 and 250"
+        },
+        "body_profiles_protein_check": {
+          "name": "body_profiles_protein_check",
+          "value": "\"nutrition\".\"body_profiles\".\"protein_g_per_kg\" is null or \"nutrition\".\"body_profiles\".\"protein_g_per_kg\" between 0.8 and 3"
+        },
+        "body_profiles_fat_share_check": {
+          "name": "body_profiles_fat_share_check",
+          "value": "\"nutrition\".\"body_profiles\".\"fat_share_percent\" is null or \"nutrition\".\"body_profiles\".\"fat_share_percent\" between 15 and 45"
+        },
+        "body_profiles_birth_date_check": {
+          "name": "body_profiles_birth_date_check",
+          "value": "\"nutrition\".\"body_profiles\".\"birth_date\" >= '1900-01-01'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "nutrition.food_entries": {
+      "name": "food_entries",
+      "schema": "nutrition",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "local_date": {
+          "name": "local_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "meal": {
+          "name": "meal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(7, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calories_kcal": {
+          "name": "calories_kcal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "protein_g": {
+          "name": "protein_g",
+          "type": "numeric(5, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_g": {
+          "name": "fat_g",
+          "type": "numeric(5, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carbs_g": {
+          "name": "carbs_g",
+          "type": "numeric(5, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_food_id": {
+          "name": "user_food_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "food_entries_user_date_idx": {
+          "name": "food_entries_user_date_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "local_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "food_entries_user_food_id_user_foods_id_fk": {
+          "name": "food_entries_user_food_id_user_foods_id_fk",
+          "tableFrom": "food_entries",
+          "tableTo": "user_foods",
+          "schemaTo": "nutrition",
+          "columnsFrom": [
+            "user_food_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "food_entries_meal_check": {
+          "name": "food_entries_meal_check",
+          "value": "meal in ('breakfast', 'lunch', 'dinner', 'snack')"
+        },
+        "food_entries_source_check": {
+          "name": "food_entries_source_check",
+          "value": "source in ('manual', 'suggestion')"
+        },
+        "food_entries_unit_check": {
+          "name": "food_entries_unit_check",
+          "value": "\"nutrition\".\"food_entries\".\"unit\" is null or unit in ('g', 'ml', 'pcs', 'serving')"
+        },
+        "food_entries_name_check": {
+          "name": "food_entries_name_check",
+          "value": "char_length(\"nutrition\".\"food_entries\".\"name\") between 1 and 200"
+        },
+        "food_entries_amount_check": {
+          "name": "food_entries_amount_check",
+          "value": "(\"nutrition\".\"food_entries\".\"amount\" is null) = (\"nutrition\".\"food_entries\".\"unit\" is null) and (\"nutrition\".\"food_entries\".\"amount\" is null or \"nutrition\".\"food_entries\".\"amount\" > 0)"
+        },
+        "food_entries_values_check": {
+          "name": "food_entries_values_check",
+          "value": "\"nutrition\".\"food_entries\".\"calories_kcal\" between 0 and 10000 and (\"nutrition\".\"food_entries\".\"protein_g\" is null or \"nutrition\".\"food_entries\".\"protein_g\" between 0 and 1000) and (\"nutrition\".\"food_entries\".\"fat_g\" is null or \"nutrition\".\"food_entries\".\"fat_g\" between 0 and 1000) and (\"nutrition\".\"food_entries\".\"carbs_g\" is null or \"nutrition\".\"food_entries\".\"carbs_g\" between 0 and 1000)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "nutrition.user_foods": {
+      "name": "user_foods",
+      "schema": "nutrition",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name_key": {
+          "name": "name_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(7, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "meal": {
+          "name": "meal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calories_kcal": {
+          "name": "calories_kcal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "protein_g": {
+          "name": "protein_g",
+          "type": "numeric(5, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fat_g": {
+          "name": "fat_g",
+          "type": "numeric(5, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carbs_g": {
+          "name": "carbs_g",
+          "type": "numeric(5, 1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "use_count": {
+          "name": "use_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "last_used_at": {
+          "name": "last_used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_foods_user_last_used_idx": {
+          "name": "user_foods_user_last_used_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"last_used_at\" desc",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_foods_user_name_key_unique": {
+          "name": "user_foods_user_name_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "name_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "user_foods_name_check": {
+          "name": "user_foods_name_check",
+          "value": "char_length(\"nutrition\".\"user_foods\".\"name\") between 1 and 200 and char_length(\"nutrition\".\"user_foods\".\"name_key\") between 1 and 200"
+        },
+        "user_foods_meal_check": {
+          "name": "user_foods_meal_check",
+          "value": "\"nutrition\".\"user_foods\".\"meal\" is null or meal in ('breakfast', 'lunch', 'dinner', 'snack')"
+        },
+        "user_foods_unit_check": {
+          "name": "user_foods_unit_check",
+          "value": "\"nutrition\".\"user_foods\".\"unit\" is null or unit in ('g', 'ml', 'pcs', 'serving')"
+        },
+        "user_foods_amount_check": {
+          "name": "user_foods_amount_check",
+          "value": "(\"nutrition\".\"user_foods\".\"amount\" is null) = (\"nutrition\".\"user_foods\".\"unit\" is null) and (\"nutrition\".\"user_foods\".\"amount\" is null or \"nutrition\".\"user_foods\".\"amount\" > 0)"
+        },
+        "user_foods_values_check": {
+          "name": "user_foods_values_check",
+          "value": "\"nutrition\".\"user_foods\".\"calories_kcal\" between 0 and 10000 and (\"nutrition\".\"user_foods\".\"protein_g\" is null or \"nutrition\".\"user_foods\".\"protein_g\" between 0 and 1000) and (\"nutrition\".\"user_foods\".\"fat_g\" is null or \"nutrition\".\"user_foods\".\"fat_g\" between 0 and 1000) and (\"nutrition\".\"user_foods\".\"carbs_g\" is null or \"nutrition\".\"user_foods\".\"carbs_g\" between 0 and 1000)"
+        },
+        "user_foods_use_count_check": {
+          "name": "user_foods_use_count_check",
+          "value": "\"nutrition\".\"user_foods\".\"use_count\" >= 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "nutrition.goals": {
+      "name": "goals",
+      "schema": "nutrition",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rate_kg_per_week": {
+          "name": "rate_kg_per_week",
+          "type": "numeric(3, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_weight_kg": {
+          "name": "target_weight_kg",
+          "type": "numeric(7, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "goals_user_effective_from_unique": {
+          "name": "goals_user_effective_from_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "effective_from"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "goals_type_check": {
+          "name": "goals_type_check",
+          "value": "type in ('lose', 'maintain', 'gain', 'recomp')"
+        },
+        "goals_rate_presence_check": {
+          "name": "goals_rate_presence_check",
+          "value": "(\"nutrition\".\"goals\".\"type\" in ('lose', 'gain')) = (\"nutrition\".\"goals\".\"rate_kg_per_week\" is not null)"
+        },
+        "goals_rate_range_check": {
+          "name": "goals_rate_range_check",
+          "value": "\"nutrition\".\"goals\".\"rate_kg_per_week\" is null or \"nutrition\".\"goals\".\"rate_kg_per_week\" between 0.10 and 1.00"
+        },
+        "goals_target_weight_check": {
+          "name": "goals_target_weight_check",
+          "value": "\"nutrition\".\"goals\".\"target_weight_kg\" is null or \"nutrition\".\"goals\".\"target_weight_kg\" between 20 and 400"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "nutrition.target_snapshots": {
+      "name": "target_snapshots",
+      "schema": "nutrition",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "goal_id": {
+          "name": "goal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calories_kcal": {
+          "name": "calories_kcal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "protein_g": {
+          "name": "protein_g",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fat_g": {
+          "name": "fat_g",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "carbs_g": {
+          "name": "carbs_g",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bmr_kcal": {
+          "name": "bmr_kcal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tdee_kcal": {
+          "name": "tdee_kcal",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "floor_applied": {
+          "name": "floor_applied",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "formula_version": {
+          "name": "formula_version",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inputs": {
+          "name": "inputs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "target_snapshots_goal_id_goals_id_fk": {
+          "name": "target_snapshots_goal_id_goals_id_fk",
+          "tableFrom": "target_snapshots",
+          "tableTo": "goals",
+          "schemaTo": "nutrition",
+          "columnsFrom": [
+            "goal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "target_snapshots_user_effective_from_unique": {
+          "name": "target_snapshots_user_effective_from_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "effective_from"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "target_snapshots_source_check": {
+          "name": "target_snapshots_source_check",
+          "value": "source in ('auto', 'manual')"
+        },
+        "target_snapshots_source_shape_check": {
+          "name": "target_snapshots_source_shape_check",
+          "value": "(\"nutrition\".\"target_snapshots\".\"source\" = 'auto') = (\"nutrition\".\"target_snapshots\".\"formula_version\" is not null and \"nutrition\".\"target_snapshots\".\"inputs\" is not null)"
+        },
+        "target_snapshots_calories_check": {
+          "name": "target_snapshots_calories_check",
+          "value": "\"nutrition\".\"target_snapshots\".\"calories_kcal\" between 800 and 8000"
+        },
+        "target_snapshots_macros_check": {
+          "name": "target_snapshots_macros_check",
+          "value": "\"nutrition\".\"target_snapshots\".\"protein_g\" >= 0 and \"nutrition\".\"target_snapshots\".\"fat_g\" >= 0 and \"nutrition\".\"target_snapshots\".\"carbs_g\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "nutrition.weight_entries": {
+      "name": "weight_entries",
+      "schema": "nutrition",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "local_date": {
+          "name": "local_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight_kg": {
+          "name": "weight_kg",
+          "type": "numeric(7, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "weight_entries_user_date_unique": {
+          "name": "weight_entries_user_date_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "local_date"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "weight_entries_weight_check": {
+          "name": "weight_entries_weight_check",
+          "value": "\"nutrition\".\"weight_entries\".\"weight_kg\" between 20 and 400"
+        },
+        "weight_entries_note_check": {
+          "name": "weight_entries_note_check",
+          "value": "\"nutrition\".\"weight_entries\".\"note\" is null or char_length(\"nutrition\".\"weight_entries\".\"note\") <= 200"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {
+    "nutrition": "nutrition"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

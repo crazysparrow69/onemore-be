@@ -27,6 +27,8 @@ export type TargetInputs = {
   activityLevel: ActivityLevel;
   goalType: GoalType;
   rateKgPerWeek: number | null;
+  proteinGPerKg?: number;
+  fatSharePercent?: number;
 };
 
 export const targetSnapshots = nutritionSchema.table(

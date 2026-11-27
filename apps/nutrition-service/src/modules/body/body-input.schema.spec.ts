@@ -14,6 +14,35 @@ describe('bodyInputSchema', () => {
     expect(bodyInputSchema.parse(valid).heightCm).toBe(168);
   });
 
+  it('treats missing own protein and fat as null and rounds protein to a tenth', () => {
+    expect(bodyInputSchema.parse(valid)).toMatchObject({
+      proteinGPerKg: null,
+      fatSharePercent: null,
+    });
+    expect(
+      bodyInputSchema.parse({
+        ...valid,
+        proteinGPerKg: 1.449,
+        fatSharePercent: 30,
+      }),
+    ).toMatchObject({ proteinGPerKg: 1.4, fatSharePercent: 30 });
+  });
+
+  it('keeps own protein within 0.8-3 g/kg and fat within 15-45 percent', () => {
+    const rejected = [
+      { proteinGPerKg: 0.7 },
+      { proteinGPerKg: 3.1 },
+      { fatSharePercent: 14 },
+      { fatSharePercent: 46 },
+      { fatSharePercent: 30.5 },
+    ];
+    for (const own of rejected) {
+      expect(bodyInputSchema.safeParse({ ...valid, ...own }).success).toBe(
+        false,
+      );
+    }
+  });
+
   it('rejects unknown fields and values outside the lists', () => {
     expect(bodyInputSchema.safeParse({ ...valid, extra: 1 }).success).toBe(
       false,

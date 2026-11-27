@@ -18,6 +18,8 @@ const targetInputs = z
     activityLevel: z.enum(ACTIVITY_LEVELS),
     goalType: z.enum(GOAL_TYPES),
     rateKgPerWeek: z.number().nullable(),
+    proteinGPerKg: z.number().optional(),
+    fatSharePercent: z.number().int().optional(),
   })
   .meta({ id: 'TargetInputs' });
 

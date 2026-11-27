@@ -40,7 +40,7 @@ describe('nutrition schema, role and migrations (real Postgres)', () => {
     const journal = await service.query<{ n: number }>(
       'select count(*)::int as n from nutrition.__drizzle_migrations',
     );
-    expect(firstRow(journal).n).toBe(1);
+    expect(firstRow(journal).n).toBe(2);
   });
 
   it('is idempotent: running again changes nothing', async () => {
@@ -49,7 +49,7 @@ describe('nutrition schema, role and migrations (real Postgres)', () => {
     const journal = await service.query<{ n: number }>(
       'select count(*)::int as n from nutrition.__drizzle_migrations',
     );
-    expect(firstRow(journal).n).toBe(1);
+    expect(firstRow(journal).n).toBe(2);
   });
 
   it('creates the six tables of the schema', async () => {
@@ -107,6 +107,28 @@ describe('nutrition schema, role and migrations (real Postgres)', () => {
          values ('x', 'male', '1990-01-01', 180, 'extreme')`,
       ),
     ).rejects.toThrow(/body_profiles_activity_check/);
+  });
+
+  it('keeps own protein and fat inside the supported range', async () => {
+    const insert = (columns: string, values: string): Promise<unknown> =>
+      service.query(
+        `insert into nutrition.body_profiles
+           (user_id, sex, birth_date, height_cm, activity_level, ${columns})
+         values ('x', 'male', '1990-01-01', 180, 'light', ${values})`,
+      );
+    await expect(insert('protein_g_per_kg', '0.5')).rejects.toThrow(
+      /body_profiles_protein_check/,
+    );
+    await expect(insert('protein_g_per_kg', '3.5')).rejects.toThrow(
+      /body_profiles_protein_check/,
+    );
+    await expect(insert('fat_share_percent', '10')).rejects.toThrow(
+      /body_profiles_fat_share_check/,
+    );
+    await expect(insert('fat_share_percent', '50')).rejects.toThrow(
+      /body_profiles_fat_share_check/,
+    );
+    await insert('protein_g_per_kg, fat_share_percent', '1.4, 30');
   });
 
   it('needs a rate for lose and gain and none for maintain', async () => {

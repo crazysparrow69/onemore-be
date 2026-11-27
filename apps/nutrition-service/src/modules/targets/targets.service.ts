@@ -158,6 +158,9 @@ export class TargetsService {
         caloriesKcal,
         weightKg: parts.weightKg,
         goalType: parts.goal?.type ?? null,
+        activityLevel: parts.body?.activityLevel ?? null,
+        proteinGPerKg: parts.body?.proteinGPerKg ?? null,
+        fatSharePercent: parts.body?.fatSharePercent ?? null,
       }),
       bmrKcal: null,
       tdeeKcal: null,
@@ -195,6 +198,8 @@ export class TargetsService {
         activityLevel: body.activityLevel,
         goalType: goal.type,
         rateKgPerWeek: goal.rateKgPerWeek,
+        proteinGPerKg: target.proteinGPerKg,
+        fatSharePercent: target.fatSharePercent,
       },
     });
   }
@@ -222,6 +227,8 @@ function calculationFor(
     activityLevel: body.activityLevel,
     goalType: goal.type,
     rateKgPerWeek: goal.rateKgPerWeek,
+    proteinGPerKg: body.proteinGPerKg,
+    fatSharePercent: body.fatSharePercent,
   });
 }
 

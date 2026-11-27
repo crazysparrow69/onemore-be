@@ -8,6 +8,13 @@
       "when": 1795799221275,
       "tag": "0000_init_nutrition",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795813055692,
+      "tag": "0001_body_macro_preferences",
+      "breakpoints": true
     }
   ]
 }

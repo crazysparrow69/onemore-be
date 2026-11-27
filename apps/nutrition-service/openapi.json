@@ -1206,6 +1206,16 @@
               "very_active"
             ]
           },
+          "proteinGPerKg": {
+            "type": "number",
+            "nullable": true
+          },
+          "fatSharePercent": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
           "updatedAt": {
             "type": "string",
             "format": "date-time"
@@ -1216,6 +1226,8 @@
           "birthDate",
           "heightCm",
           "activityLevel",
+          "proteinGPerKg",
+          "fatSharePercent",
           "updatedAt"
         ],
         "additionalProperties": false
@@ -1249,6 +1261,20 @@
               "active",
               "very_active"
             ]
+          },
+          "proteinGPerKg": {
+            "type": "number",
+            "minimum": 0.8,
+            "maximum": 3,
+            "description": "Own protein in grams per kilogram of body weight; null means the formula decides",
+            "nullable": true
+          },
+          "fatSharePercent": {
+            "type": "integer",
+            "minimum": 15,
+            "maximum": 45,
+            "description": "Own share of calories from fat in percent; null means the formula decides",
+            "nullable": true
           },
           "today": {
             "type": "string",
@@ -1309,6 +1335,14 @@
           "rateKgPerWeek": {
             "type": "number",
             "nullable": true
+          },
+          "proteinGPerKg": {
+            "type": "number"
+          },
+          "fatSharePercent": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": [

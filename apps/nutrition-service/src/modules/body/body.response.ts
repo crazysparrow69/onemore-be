@@ -10,6 +10,8 @@ export const bodyResponseSchema = z
     birthDate: dateResponse,
     heightCm: z.number(),
     activityLevel: z.enum(ACTIVITY_LEVELS),
+    proteinGPerKg: z.number().nullable(),
+    fatSharePercent: z.number().int().nullable(),
     updatedAt: instantResponse,
   })
   .meta({ id: 'BodyResponse' });
@@ -24,6 +26,8 @@ export function toBodyResponse(row: BodyRow): BodyResponse {
     birthDate: row.birthDate,
     heightCm: row.heightCm,
     activityLevel: row.activityLevel,
+    proteinGPerKg: row.proteinGPerKg,
+    fatSharePercent: row.fatSharePercent,
     updatedAt: row.updatedAt.toISOString(),
   };
 }

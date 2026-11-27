@@ -334,15 +334,15 @@ describe('food diary and suggestions (real Postgres)', () => {
 
       expect(day.target).toEqual({
         caloriesKcal: 2210,
-        proteinG: 144,
+        proteinG: 136,
         fatG: 61,
-        carbsG: 271,
+        carbsG: 279,
       });
       expect(day.remaining).toEqual({
         caloriesKcal: 1860,
-        proteinG: 132,
+        proteinG: 124,
         fatG: 54,
-        carbsG: 211,
+        carbsG: 219,
       });
 
       await alice.put(
@@ -407,9 +407,9 @@ describe('food diary and suggestions (real Postgres)', () => {
           totals: { caloriesKcal: 1000, proteinG: 24, fatG: 14, carbsG: 120 },
           target: {
             caloriesKcal: 2210,
-            proteinG: 144,
+            proteinG: 136,
             fatG: 61,
-            carbsG: 271,
+            carbsG: 279,
           },
         },
       ]);
