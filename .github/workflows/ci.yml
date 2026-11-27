@@ -72,11 +72,15 @@ jobs:
       - name: openapi.json is up to date
         run: |
           # `status`, not `diff`: it also catches a file that is not committed yet.
-          if [ -n "$(git status --porcelain -- apps/core-service/openapi.json)" ]; then
-            git diff -- apps/core-service/openapi.json || true
-            echo "::error::apps/core-service/openapi.json is stale. Run 'pnpm openapi:generate' and commit it."
-            exit 1
-          fi
+          stale=0
+          for app in core-service nutrition-service; do
+            if [ -n "$(git status --porcelain -- "apps/$app/openapi.json")" ]; then
+              git diff -- "apps/$app/openapi.json" || true
+              echo "::error::apps/$app/openapi.json is stale. Run 'pnpm openapi:generate' and commit it."
+              stale=1
+            fi
+          done
+          exit "$stale"
 
       # A pull request only: on `push` to `main` the same change was already
       # checked on its pull request.
@@ -86,33 +90,53 @@ jobs:
           # Pinned. Bump on purpose and read the release notes.
           OASDIFF_IMAGE: tufin/oasdiff:v1.39.0
         run: |
-          if ! git cat-file -e origin/main:apps/core-service/openapi.json 2>/dev/null; then
-            echo "::notice::main has no openapi.json yet, nothing to compare with."
-            exit 0
-          fi
-          git show origin/main:apps/core-service/openapi.json > "$RUNNER_TEMP/base.json"
-          cp apps/core-service/openapi.json "$RUNNER_TEMP/head.json"
-          ERR_IGNORE=()
-          if [ -s apps/core-service/openapi-breaking-ignore.txt ]; then
-            cp apps/core-service/openapi-breaking-ignore.txt "$RUNNER_TEMP/ignore.txt"
-            ERR_IGNORE=(--err-ignore /specs/ignore.txt)
-          fi
-          {
-            echo '### API changes against main'
-            echo '```'
-            docker run --rm -v "$RUNNER_TEMP:/specs:ro" "$OASDIFF_IMAGE" \
-              changelog /specs/base.json /specs/head.json || true
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-          docker run --rm -v "$RUNNER_TEMP:/specs:ro" "$OASDIFF_IMAGE" \
-            breaking /specs/base.json /specs/head.json \
-            --fail-on ERR "${ERR_IGNORE[@]}"
+          failed=0
+          for app in core-service nutrition-service; do
+            spec="apps/$app/openapi.json"
+            if ! git cat-file -e "origin/main:$spec" 2>/dev/null; then
+              echo "::notice::main has no $spec yet, nothing to compare with."
+              continue
+            fi
+            dir="$RUNNER_TEMP/$app"
+            mkdir -p "$dir"
+            git show "origin/main:$spec" > "$dir/base.json"
+            cp "$spec" "$dir/head.json"
+            ERR_IGNORE=()
+            if [ -s "apps/$app/openapi-breaking-ignore.txt" ]; then
+              cp "apps/$app/openapi-breaking-ignore.txt" "$dir/ignore.txt"
+              ERR_IGNORE=(--err-ignore /specs/ignore.txt)
+            fi
+            {
+              echo "### API changes against main: $app"
+              echo '```'
+              docker run --rm -v "$dir:/specs:ro" "$OASDIFF_IMAGE" \
+                changelog /specs/base.json /specs/head.json || true
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            docker run --rm -v "$dir:/specs:ro" "$OASDIFF_IMAGE" \
+              breaking /specs/base.json /specs/head.json \
+              --fail-on ERR "${ERR_IGNORE[@]}" || failed=1
+          done
+          exit "$failed"
 
   image:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: core-service
+            smoke_env: |
+              CLOUDINARY_CLOUD_NAME=smoke
+              CLOUDINARY_API_KEY=1
+              CLOUDINARY_API_SECRET=smoke
+              CLOUDINARY_FOLDER=smoke
+          - service: nutrition-service
+            smoke_env: ''
     env:
-      IMAGE: onemore/core-service:ci
+      IMAGE: onemore/${{ matrix.service }}:ci
+      CONTAINER: smoke-${{ matrix.service }}
     steps:
       - uses: actions/checkout@v7
 
@@ -122,29 +146,31 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: apps/core-service/Dockerfile
+          file: apps/${{ matrix.service }}/Dockerfile
           target: runtime
           tags: ${{ env.IMAGE }}
           load: true
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
       - name: Smoke test the image
         env:
           APP_VERSION: ci-${{ github.sha }}
+          SMOKE_ENV: ${{ matrix.smoke_env }}
         run: |
-          docker run -d --name core-smoke -p 8080:8080 \
+          extra=()
+          while IFS= read -r line; do
+            [ -n "$line" ] && extra+=(-e "$line")
+          done <<< "$SMOKE_ENV"
+          docker run -d --name "$CONTAINER" -p 8080:8080 \
             -e NODE_ENV=production \
             -e PORT=8080 \
             -e LOG_LEVEL=info \
             -e APP_VERSION="$APP_VERSION" \
             -e DATABASE_URL=postgresql://smoke:smoke@127.0.0.1:1/smoke \
             -e NEON_AUTH_URL=https://auth.example.test/neondb/auth \
-            -e CLOUDINARY_CLOUD_NAME=smoke \
-            -e CLOUDINARY_API_KEY=1 \
-            -e CLOUDINARY_API_SECRET=smoke \
-            -e CLOUDINARY_FOLDER=smoke \
+            "${extra[@]}" \
             "$IMAGE"
           for _ in $(seq 1 30); do
             if curl -sf http://127.0.0.1:8080/health -o health.json; then
@@ -157,11 +183,11 @@ jobs:
 
       - name: Container logs
         if: failure()
-        run: docker logs core-smoke || true
+        run: docker logs "$CONTAINER" || true
 
       - name: Cleanup
         if: always()
-        run: docker rm -f core-smoke || true
+        run: docker rm -f "$CONTAINER" || true
 
   # The only check required by the `main` ruleset. It also succeeds when jobs are
   # skipped, which a plain required check would not.

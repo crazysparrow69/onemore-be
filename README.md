@@ -16,13 +16,15 @@ Run from the repository root:
 ```bash
 pnpm install
 pnpm dev            # core-service with reload; needs apps/core-service/.env (see Configuration)
+pnpm dev:nutrition  # nutrition-service with reload; needs apps/nutrition-service/.env
 pnpm lint
 pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm test:e2e
+pnpm test:int          # integration tests (Testcontainers, needs Docker)
 pnpm build
-pnpm openapi:generate   # rewrite apps/core-service/openapi.json from the Zod schemas
+pnpm openapi:generate   # rewrite apps/*/openapi.json from the Zod schemas
 ```
 
 Production-shaped start, after `pnpm build`:
@@ -51,7 +53,7 @@ The photos live in the web repository (`public/exercises/<source_id in lowercase
 
 `pnpm install` turns the hooks on (husky). They run locally; CI still runs the same checks plus the image build.
 
-- **pre-commit**: ESLint `--fix` and Prettier on staged `*.ts` in `apps/core-service`, then `pnpm typecheck`
+- **pre-commit**: ESLint `--fix` and Prettier on staged `*.ts` in `apps/core-service` and `apps/nutrition-service`, then `pnpm typecheck`
 - **commit-msg**: [Conventional Commits](https://www.conventionalcommits.org/), for example `feat(core-service): add health check`
 - **pre-push**: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`
 
@@ -72,10 +74,13 @@ Everything in containers (service runs with hot reload):
 docker compose --profile full up --build
 ```
 
+core-service listens on `5001`, nutrition-service on `5002`.
+
 Production image (no secrets baked in; pass `APP_VERSION` at run time):
 
 ```bash
 docker build -f apps/core-service/Dockerfile --target runtime -t onemore/core-service:local .
+docker build -f apps/nutrition-service/Dockerfile --target runtime -t onemore/nutrition-service:local .
 ```
 
 The production image uses `pnpm deploy --legacy` because pnpm 10 refuses to deploy a workspace package otherwise. When `packages/*` appear, set `inject-workspace-packages=true` and drop `--legacy`.
@@ -83,7 +88,8 @@ The production image uses `pnpm deploy --legacy` because pnpm 10 refuses to depl
 ## Layout
 
 ```
-apps/core-service   account, exercises, workouts, templates
+apps/core-service       account, exercises, workouts, templates
+apps/nutrition-service  body profile, goals, weight, daily norm, food diary, autosuggest
 packages/*          shared packages (added later)
 ```
 
@@ -94,28 +100,43 @@ packages/*          shared packages (added later)
 - `lint`: ESLint and Prettier
 - `typecheck`: `tsc --noEmit`
 - `test`: unit and e2e (Vitest)
-- `contracts`: `openapi.json` is up to date, and `oasdiff breaking` finds no breaking API change against `main`
-- `image`: builds the production image and smoke-tests `GET /health`
+- `contracts`: `openapi.json` of each service is up to date, and `oasdiff breaking` finds no breaking API change against `main`
+- `image`: builds the production image of each service (matrix) and smoke-tests `GET /health`
 - `ci-ok`: aggregates the jobs above; this is the only check the `main` ruleset should require
 
 All jobs run on every PR (no path filters), because a required check that never runs blocks the merge. Filtering by changed packages comes back when there is more than one service.
 
 ## API contract
 
-`apps/core-service/openapi.json` describes the HTTP API and is generated from the Zod schemas (`nestjs-zod` + `@nestjs/swagger`). It is committed; the web repository copies types from it by hand for now.
+`apps/<service>/openapi.json` describes the HTTP API of each service and is generated from the Zod schemas (`nestjs-zod` + `@nestjs/swagger`). It is committed; the web repository copies types from it by hand for now.
 
 - Changed a schema, a controller or a route? Run `pnpm openapi:generate` and commit `openapi.json` in the same commit. The `contracts` CI job (and `pnpm test:e2e`) fails on a stale file.
 - Response bodies are Zod schemas too (`@ZodResponse` on the handler). The response is parsed by the schema, so a field that is not in it never reaches the client.
 - Error responses use one body, `ErrorResponse`; declare them with `@ApiErrorResponses(...)`.
 - The `contracts` job runs `oasdiff breaking` against `main` and fails on a breaking change (removed route or field, a new required field, a narrower type). Prefer a backward compatible change; the deploy order is service first, then web.
-- A deliberate breaking change: copy the line the job prints into `apps/core-service/openapi-breaking-ignore.txt` in the same pull request, and remove it in the next one. The file is empty by default.
+- A deliberate breaking change: copy the line the job prints into `apps/<service>/openapi-breaking-ignore.txt` in the same pull request, and remove it in the next one. The file is empty by default.
 - Locally, `pnpm dev` serves Swagger UI at `/api/docs` (not in production).
 
 ## Configuration
 
-Every variable in `apps/core-service/.env.example` is required and has no default. The service validates them with Zod at startup and exits with `Invalid environment: ...` if any is missing or invalid.
+Every variable in `apps/<service>/.env.example` is required and has no default. The service validates them with Zod at startup and exits with `Invalid environment: ...` if any is missing or invalid.
 
 - Local `pnpm dev`: `cp apps/core-service/.env.example apps/core-service/.env`. `@nestjs/config` loads that file; real environment variables take precedence over it.
 - Docker Compose sets its own values and does not read `.env`.
 - `DATABASE_URL` is the pooled connection string of the `core_svc` role. Locally it is the Compose database (`docker compose up -d db`, the role and schema come from `infra/db/core.sql`). To re-run the init scripts: `docker compose down -v && docker compose up -d db`.
 - Deploys (Cloud Run) must provide every variable, including `APP_VERSION`.
+
+## nutrition-service
+
+Schema `nutrition`, role `nutrition_svc`, same Neon database as core. It has no users table and no foreign keys to other schemas: `user_id` is the JWT `sub`. The service never knows the user's time zone: the client sends the local date (`today`, `localDate`).
+
+- `/api/body`: body profile (sex, birth date, height, activity), one row per user
+- `/api/goals/current`: goal history (lose / maintain / gain), insert-only
+- `/api/weight`: one weight entry per date; the latest one drives the norm
+- `/api/nutrition/target`: daily norm. `PUT /target/auto` recalculates (Mifflin-St Jeor, rounded to 10 kcal), `PUT /target/manual` sets calories and optional macros by hand. A new norm applies from the given day; earlier days keep theirs
+- `/api/nutrition/days`, `/api/nutrition/entries/:id`: food diary with the remainder for the day (macros are optional and independent)
+- `/api/nutrition/suggestions`: autosuggest from the user's own earlier entries
+
+Local database: the init script `infra/local/postgres-init/02-nutrition.sh` runs only on an empty volume. On an existing volume run `docker compose down -v && docker compose up -d db`, or apply `infra/db/nutrition.sql` by hand. Then `pnpm migrate:nutrition`.
+
+The first deploy of a new service is manual: `infra/gcp/03-iam.sh`, `06-neon-nutrition.sh`, `07-secret-nutrition-db.sh`, `04-first-deploy.sh nutrition-service`, `05-trigger.sh nutrition-service`. Cloud Build uses `infra/cloudbuild/nutrition-service.yaml`.

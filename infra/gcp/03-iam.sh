@@ -9,6 +9,7 @@ ensure_sa() {
 }
 
 ensure_sa sa-core "core-service runtime"
+ensure_sa sa-nutrition "nutrition-service runtime"
 ensure_sa sa-cloudbuild "Cloud Build deployer"
 sleep 8 # a new account is not visible to IAM immediately
 
@@ -23,4 +24,6 @@ gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --member="serviceAccount:${SA_BUILD}" --role=roles/logging.logWriter --condition=None >/dev/null
 gcloud iam service-accounts add-iam-policy-binding "${SA_CORE}" \
+  --member="serviceAccount:${SA_BUILD}" --role=roles/iam.serviceAccountUser >/dev/null
+gcloud iam service-accounts add-iam-policy-binding "${SA_NUTRITION}" \
   --member="serviceAccount:${SA_BUILD}" --role=roles/iam.serviceAccountUser >/dev/null

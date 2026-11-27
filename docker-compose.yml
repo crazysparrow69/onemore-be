@@ -47,5 +47,35 @@ services:
       retries: 12
       start_period: 40s
 
+  nutrition-service:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: apps/nutrition-service/Dockerfile
+      target: development
+    ports:
+      - "5002:5002"
+    environment:
+      NODE_ENV: development
+      PORT: "5002"
+      LOG_LEVEL: debug
+      APP_VERSION: dev
+      DATABASE_URL: postgresql://nutrition_svc:nutrition_svc_local@db:5432/onemore
+      NEON_AUTH_URL: https://ep-wild-dream-b94q2xh7.neonauth.c-7.eu-central-1.aws.neon.tech/neondb/auth
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./apps/nutrition-service/src:/repo/apps/nutrition-service/src
+      - ./apps/nutrition-service/tsconfig.json:/repo/apps/nutrition-service/tsconfig.json
+      - ./apps/nutrition-service/tsconfig.build.json:/repo/apps/nutrition-service/tsconfig.build.json
+      - ./apps/nutrition-service/nest-cli.json:/repo/apps/nutrition-service/nest-cli.json
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5002/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
 volumes:
   db-data:

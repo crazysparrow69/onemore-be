@@ -1,5 +1,6 @@
-# One parametrized pipeline for every service. A trigger per service sets the
-# substitutions (see infra/gcp/05-trigger.sh). Runs on push to `main`.
+# Pipeline of core-service (with Cloudinary); nutrition-service has its own
+# nutrition-service.yaml. A trigger sets the substitutions (see infra/gcp/05-trigger.sh).
+# Runs on push to `main`.
 #
 # build -> push -> migrate -> deploy without traffic (tag "candidate") -> smoke -> traffic.
 # Any failing step stops the build, and the previous revision keeps serving.

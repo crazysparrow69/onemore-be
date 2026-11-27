@@ -8,9 +8,11 @@
   "scripts": {
     "prepare": "husky || true",
     "build": "pnpm -r build",
-    "openapi:generate": "pnpm --filter core-service openapi:generate",
+    "openapi:generate": "pnpm -r openapi:generate",
     "dev": "pnpm --filter core-service dev",
+    "dev:nutrition": "pnpm --filter nutrition-service dev",
     "migrate": "pnpm --filter core-service migrate",
+    "migrate:nutrition": "pnpm --filter nutrition-service migrate",
     "seed": "pnpm --filter core-service seed",
     "seed:translations": "pnpm --filter core-service seed:translations",
     "media:setup": "pnpm --filter core-service media:setup",

@@ -14,6 +14,7 @@ GITHUB_OWNER="crazysparrow69"
 GITHUB_REPO="onemore-be"
 
 SA_CORE="sa-core@${PROJECT_ID}.iam.gserviceaccount.com"
+SA_NUTRITION="sa-nutrition@${PROJECT_ID}.iam.gserviceaccount.com"
 SA_BUILD="sa-cloudbuild@${PROJECT_ID}.iam.gserviceaccount.com"
 
 gcloud config set project "${PROJECT_ID}" >/dev/null
